@@ -1,0 +1,151 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * PHP Package Management
+ **/
+
+class Command {
+
+	public function exec(){
+
+		$arguments  = $_SERVER['argv'];
+
+		$scriptName = array_shift($arguments);
+		if (count($arguments) == 0) {
+			return $this->commandHelp();
+		}
+
+		$commandName = array_shift($arguments);
+		if ($commandName == 'status') {
+			return $this->commandStatus();
+		} else {
+			echo("Command not exists: $commandName\n");
+		}
+	}
+
+	public function commandStatus() {
+
+		$project = new \Project;
+		foreach ($project->getPackages() as $package) {
+			$package->printStatus();
+		}
+	}
+}
+
+class Config {
+
+	public $data;
+
+	public function load() {
+		if (is_null($this->data)) {
+			$text = file_get_contents('composer.json');
+			$this->data = json_decode($text, true);
+		}
+	}
+
+	public function getPackages() {
+
+		$this->load();
+
+		$packages = array();
+		if (isset($this->data['require']) == false) {
+			return $packages;
+		}
+
+		foreach ($this->data['require'] as $packageName => $packageVersion) {
+			$package = new \Package;
+			$package->name = $packageName;
+			$package->version = $packageVersion;
+			$packages[] = $package;
+		}
+
+		return $packages;
+	}
+}
+
+class Console {
+
+	public function text($command) {
+		exec($command, $outputLines, $exitCode);
+		if ($exitCode != 0){
+			throw new \Exception("Command return non zero exit code");
+		}
+		return implode("\n", $outputLines);
+	}
+}
+
+class Project {
+
+	public function getPackages(){
+
+		$config = new \Config;
+		$packages = $config->getPackages();
+		return $packages;
+	}
+}
+
+class Package {
+
+	public $name;
+	public $version;
+
+	public function printStatus() {
+
+		$console = new \Console;
+
+		if ($this->name == 'php') {
+			return TRUE;
+		}
+
+		$command = $this->getGitCommand().' status --short';
+
+		$text = $console->text($command);
+		if (empty($text) == false) {
+			echo("M  ".$this->name."\n");
+			return true;
+		}
+
+		$gitRemoteCommit = '';
+		$command = $this->getGitCommand().' ls-remote origin '.$this->getCurrentBranch();
+		$text = $console->text($command);
+		if (empty($text) == false) {
+			$item = explode("\t", $text);
+			if (count($item) == 2) {
+				$gitRemoteCommit = $item[0];
+			}
+		}
+
+		$gitCurentCommit = $this->getCurrentCommit();
+		if ($gitCurentCommit == $gitRemoteCommit) {
+			return true;
+		}
+
+		echo(' M '.$this->name."\n");
+	}
+
+	protected function getGitCommand() {
+		$workTree = 'vendor/'.$this->name;
+		$gitDir = 'vendor/'.$this->name.'/.git';
+		$command = 'git --git-dir='.$gitDir.' --work-tree='.$workTree;
+		return $command;
+	}
+
+	public function getCurrentBranch() {
+		$console = new \Console;
+		$command = $this->getGitCommand().' rev-parse --abbrev-ref HEAD';
+		return $console->text($command);
+	}
+
+	public function getCurrentCommit() {
+		$console = new \Console;
+		$command = $this->getGitCommand().' log -n 1 --format=%H HEAD';
+		return $console->text($command);
+	}
+}
+
+// -- Controller --
+
+$command = new \Command;
+$command->exec();
+
