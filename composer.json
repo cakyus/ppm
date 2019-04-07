@@ -1,0 +1,11 @@
+{
+    "name": "pdr/ppm",
+    "description": "PHP Package Manager",
+    "license": "GPL-2.0-only",
+    "minimum-stability": "dev",
+		"autoload": {
+			"psr-4": {
+				"Pdr\\Ppm\\": "src/"
+			}
+		}
+}
