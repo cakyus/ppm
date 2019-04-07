@@ -15,11 +15,13 @@ class PackageController extends \Controller {
 	public function commandInstall($packageText){
 
 		if (is_null($packageText)){
+
 			$composerLock = new \ComposerLock;
 			$composerLock->open();
 			foreach ($composerLock->data->packages as $package){
 				$this->installPackage($package->name.':'.$package->source->reference);
 			}
+
 		} else {
 
 			if ($package = $this->installPackage($packageText)) {
@@ -33,6 +35,7 @@ class PackageController extends \Controller {
 				$composerLock->open();
 				$composerLock->addPackage($package);
 				$composerLock->save();
+
 			} else {
 				throw new \Exception("Install package fail");
 			}
@@ -123,6 +126,12 @@ class PackageController extends \Controller {
 			\Logger::error("Remote url does not have branch $packageBranchName");
 		}
 
+		if (preg_match("/^([0-9a-f]{40,40})\s+/",$line,$match) == false){
+			throw new \Exception("Parse error");
+		}
+
+		$remoteCommit = $match[1];
+
 		$packageVersion= substr($line, 0, 40);
 
 		$project = new \Project;
@@ -134,8 +143,9 @@ class PackageController extends \Controller {
 		$package->version = $packageVersion;
 		$package->versionType = $packageVersionType;
 		$package->remoteUrl = $repository->url;
+
 		if ($package->exist() == true){
-			\Logger::debug("Package exist");
+			$package->update();
 			return $package;
 		}
 
@@ -528,6 +538,58 @@ class Package {
 	public function getCurrentCommit() {
 		$command = $this->getGitCommand().' log -n 1 --format=%H HEAD';
 		return \Console::text($command);
+	}
+
+	/**
+	 * Update package from remotw
+	 **/
+
+	public function update(){
+
+		// get remote commit
+
+		$command = $this->getGitCommand();
+		$command .= ' ls-remote '.$this->remoteUrl.' refs/heads/'.$this->branchName;
+		$line  = \Console::text($command);
+
+		if (empty($line)){
+			\Logger::error("Remote {$this->remoteUrl} does not have branch {$this->branchName}");
+		}
+
+		if (preg_match("/^([0-9a-f]{40,40})\s+/",$line,$match) == false){
+			throw new \Exception("Parse error");
+		}
+
+		$remoteCommit = $match[1];
+
+		// get local commit
+
+		$localCommit = $this->getCurrentCommit();
+
+		if ($remoteCommit != $localCommit){
+
+			\Logger::debug('Remote has different commit hash');
+
+			if ($this->getStatus() == 1){
+				\Logger::warn('Update failed, local repository has changes.');
+				return false;
+			} else {
+
+				// fetch remote refs
+
+				$command = $this->getGitCommand();
+				$command .= ' fetch '.$this->remoteUrl.' refs/heads/'.$this->branchName;
+				\Console::exec($command);
+
+				// merge commit
+
+				$command = $this->getGitCommand();
+				$command .= ' merge '.$remoteCommit;
+				\Console::exec($command);
+			}
+		}
+
+		return true;
 	}
 
 	/**
