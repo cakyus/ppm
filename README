@@ -1,1 +1,13 @@
 PHP Package Manager
+
+# Features
+
+ * Doest not perform unnecessary actions.
+ * Integration with `git` as much as possible.
+ * Zero configuration while maintain compatibility with `composer` configuration.
+ * Compatiblity with `apt` commands.
+
+# TODO
+
+ * Remove any dependencies from `composer`, ie. `dump-autoload`.
+
