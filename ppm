@@ -40,6 +40,10 @@ class PackageConfig {
 	}
 }
 
+/**
+ * DEPRECATED see \Pdr\Ppm\GlobalConfig
+ **/
+
 class ComposerConfigGlobal {
 
 	public $data;

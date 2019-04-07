@@ -219,6 +219,38 @@ class PpmCommand extends \Pdr\Ppm\Command {
 		}
 	}
 
+	/**
+	 * Display a list of packages
+	 **/
+
+	public function commandList(){
+
+		$config = new \Pdr\Ppm\GlobalConfig;
+		$config->open();
+
+		$repositories = array();
+
+		if (	isset($config->data->repositories)
+			&&	is_object($config->data->repositories)
+			){
+			foreach ($config->data->repositories as $repositoryName => $repository){
+				if ($repositoryName == 'packagist'){
+					continue;
+				}
+				$repositories[$repositoryName] = '';
+				if (isset($repository->url)){
+					$repositories[$repositoryName] = $repository->url;
+				}
+			}
+		}
+
+		// print result
+
+		foreach ($repositories as $repositoryName => $repositoryUrl){
+			echo $repositoryName.' '.$repositoryUrl."\n";
+		}
+	}
+
 	public function commandTest($option = null) {
 
 		// check PHP syntax

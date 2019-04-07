@@ -4,7 +4,6 @@ PHP Package Manager
 
  * Doest not perform unnecessary actions.
  * Integration with `git` as much as possible.
- * Compatibility with `apt` commands.
 
 # TODO
 
