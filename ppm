@@ -1,27 +1,149 @@
 #!/usr/bin/env php
-<?php
+<?php include_once(__DIR__.'/lib/main.php');
 
 /**
  * PHP Package Management
  **/
 
-class Command {
 
-	public function exec(){
+class PackageController extends \Controller {
 
-		$arguments  = $_SERVER['argv'];
+	public function __construct(){
+		parent::__construct();
+	}
 
-		$scriptName = array_shift($arguments);
-		if (count($arguments) == 0) {
-			return $this->commandHelp();
-		}
+	public function commandInstall($packageText){
 
-		$commandName = array_shift($arguments);
-		if ($commandName == 'status') {
-			return $this->commandStatus();
+		if (is_null($packageText)){
+			$composerLock = new \ComposerLock;
+			$composerLock->open();
+			foreach ($composerLock->data->packages as $package){
+				$this->installPackage($package->name.':'.$package->source->reference);
+			}
 		} else {
-			echo("Command not exists: $commandName\n");
+
+			if ($package = $this->installPackage($packageText)) {
+
+				$configLocal = new \ComposerConfigLocal;
+				$configLocal->open();
+				$configLocal->addPackage($package);
+				$configLocal->save();
+
+				$composerLock = new \ComposerLock;
+				$composerLock->open();
+				$composerLock->addPackage($package);
+				$composerLock->save();
+			} else {
+				throw new \Exception("Install package fail");
+			}
+
 		}
+
+		$composerCommand = new \ComposerCommand;
+		$composerCommand->createAutoload();
+	}
+
+	/**
+	 * Install package
+	 *
+	 * @param $package VENDOR_NAME/PROJECT_NAME[:VERSION]
+	 **/
+
+	protected function installPackage($package){
+
+		// pdr/docker-files:dev-core
+		if (preg_match("/^([^:]+):(.+)$/",$package,$match) == false){
+			throw new \Exception("Parse package fail");
+		}
+
+		$packageName = $match[1];
+		$packageVersion = $match[2];
+
+		if (preg_match("/^dev\-(.+)$/",$packageVersion,$match)){
+			$packageVersion = $match[1];
+			$packageVersionType = 'branch';
+			$packageBranchName = $match[1];
+		} elseif (preg_match("/^([0-9a-f]{40,40})$/",$packageVersion,$match)){
+			$packageVersion = $match[1];
+			$packageVersionType = 'commit';
+		} else {
+			throw new \Exception("Parse package fail. '$packageVersion'");
+		}
+
+		// get packageBranchName for packageVersionType commit
+
+		if ($packageVersionType == 'commit'){
+
+			$config = new \ComposerConfigLocal;
+			if ($config->open() == false){
+				return false;
+			}
+
+			$repositoryFound = false;
+			foreach ($config->data->require as $repositoryName => $repositoryVersion){
+				if ($repositoryName != $packageName){
+					continue;
+				}
+				$repositoryFound = true;
+				if (preg_match("/^dev\-(.+)$/",$repositoryVersion,$match)){
+					$packageBranchName = $match[1];
+				} else {
+					throw new \Exception("Parse repositoryVersion fail. '$repositoryVersion'");
+				}
+
+				break;
+			}
+			if (empty($repositoryFound)){
+				throw new \Exception("Repository is not found");
+			}
+		}
+
+		$config = new \ComposerConfigGlobal;
+		if ($config->open() == false){
+			return false;
+		}
+
+		$repositoryFound = false;
+		foreach ($config->data->repositories as $repositoryName => $repository){
+			if ($repositoryName != $packageName){
+				continue;
+			}
+			$repositoryFound = true;
+			break;
+		}
+
+		if (empty($repositoryFound)){
+			throw new \Exception("Repository is not found");
+		}
+
+		// get packageVersion for packageVersionType commit ( packageVersion is not branchName )
+
+		$line = \Console::text("git ls-remote {$repository->url} refs/heads/$packageBranchName");
+		if (empty($line)){
+			\Logger::error("Remote url does not have branch $packageBranchName");
+		}
+
+		$packageVersion= substr($line, 0, 40);
+
+		$project = new \Project;
+		$packageDir = $project->getVendorDir().'/'.$packageName;
+
+		$package = new \Package;
+		$package->name = $packageName;
+		$package->branchName = $packageBranchName;
+		$package->version = $packageVersion;
+		$package->versionType = $packageVersionType;
+		$package->remoteUrl = $repository->url;
+		if ($package->exist() == true){
+			\Logger::debug("Package exist");
+			return $package;
+		}
+
+		$package->create();
+
+		return $package;
+
+		\Logger::debug("Done");
 	}
 
 	public function commandStatus() {
@@ -31,9 +153,87 @@ class Command {
 			$package->printStatus();
 		}
 	}
+
+	/**
+	 * Update composer lock file
+	 **/
+
+	public function commandLock(){
+
+		$project = new \Project;
+
+		foreach ($project->getPackages() as $package){
+
+			$packageStatus = $package->getStatus();
+			if (empty($packageStatus) == false){
+				\Logger::error("Change exist on package {$package->name}");
+			}
+
+			$composerLock = new \ComposerLock;
+			$composerLock->open();
+			$packageLockFound = false;
+
+			foreach ($composerLock->data->packages as $packageLock){
+				if ($packageLock->name == $package->name){
+					$packageLockFound = true;
+					\Logger::debug("Check packageLock {$packageLock->name}");
+					\Logger::debug($packageLock->source->reference.' => '.$package->getCurrentCommit());
+					if ($packageLock->source->reference != $package->getCurrentCommit()){
+						\Logger::debug("Update {$package->name}");
+						$packageLock->source->reference = $package->getCurrentCommit();
+					}
+				}
+			}
+
+			if (empty($packageLockFound)){
+				$composerLock->addPackage($package);
+			}
+
+			$composerLock->save();
+		}
+	}
+
+	public function commandTest($option = null) {
+
+		// check PHP syntax
+
+		if (is_null($option)){
+			$option = new \stdClass;
+			$testFile = sys_get_temp_dir().'/ppm.test.'.md5(getcwd());
+			$option->testDir = getcwd();
+			$option->testDate = 0;
+			if (is_file($testFile)){
+				$option->testDate = filemtime($testFile);
+			}
+			touch($testFile);
+		}
+
+		if ($dh = opendir($option->testDir)){
+			while (($file = readdir($dh)) !== false){
+				if ($file == '.' || $file == '..'){
+					continue;
+				}
+				$path = $option->testDir.'/'.$file;
+				if (is_dir($path)){
+					$iOption = new \stdClass;
+					$iOption->testDir = $path;
+					$iOption->testDate = $option->testDate;
+					$this->commandTest($iOption);
+				} elseif (substr($path, -4) == '.php') {
+					if (filemtime($path) > $option->testDate){
+						passthru('php -l '.escapeshellarg($path).' >/dev/null 2>&1', $exit);
+						if ($exit){
+							echo "Syntax-Error: $path\n"; exit(1);
+						}
+					}
+				}
+			}
+			closedir($dh);
+		}
+	}
 }
 
-class Config {
+class PackageConfig {
 
 	public $data;
 
@@ -64,22 +264,210 @@ class Config {
 	}
 }
 
-class Console {
+class ComposerConfigGlobal {
 
-	public function text($command) {
-		exec($command, $outputLines, $exitCode);
-		if ($exitCode != 0){
-			throw new \Exception("Command return non zero exit code");
+	public $data;
+
+	public function open(){
+
+		$files = array(
+			$_SERVER['HOME'].'/.composer/config.json'
+		);
+
+		$fileFound = false;
+		$filePath = null;
+		foreach ($files as $file){
+			if (is_file($file) == false){
+				continue;
+			}
+			$fileFound = true;
+			$filePath = $file;
+			break;
 		}
-		return implode("\n", $outputLines);
+
+		if (empty($fileFound)){
+			\Logger::warn("Global composer config file is not found");
+			return false;
+		}
+
+		if (($data = json_decode(file_get_contents($filePath))) == false){
+			\Logger::warn("JSON parse fail");
+			return false;
+		}
+
+		$this->data = $data;
+		return true;
+	}
+}
+
+class ComposerConfigLocal {
+
+	public $data;
+	public $file;
+
+	public function open(){
+
+		$project = new \Project;
+
+		$files = array(
+			$project->getRootDir().'/composer.json'
+		);
+
+		$fileFound = false;
+		$filePath = null;
+		foreach ($files as $file){
+			if (is_file($file) == false){
+				continue;
+			}
+			$fileFound = true;
+			$filePath = $file;
+			break;
+		}
+
+		if (empty($fileFound)){
+			\Logger::warn("Local composer config file is not found");
+			return false;
+		}
+
+		if (($data = json_decode(file_get_contents($filePath))) == false){
+			\Logger::warn("JSON parse fail");
+			$this->data = new \stdClass;
+			return false;
+		}
+
+		$this->file = $filePath;
+		$this->data = $data;
+
+		return true;
+	}
+
+	public function addPackage(\Package $package){
+		$packageName = $package->name;
+		$attributeRequireName = 'require';
+		if ($package->versionType == 'branch'){
+			$this->data->$attributeRequireName->$packageName = 'dev-'.$package->branchName;
+		} else {
+			throw new \Exception("Unsupported versionType: {$package->versionType}");
+		}
+
+	}
+
+	public function save(){
+		$temp = tempnam(sys_get_temp_dir(), 'php.');
+		$text = json_encode($this->data);
+		file_put_contents($this->file, $text);
+		\Console::exec("json_pp < ".$this->file." > $temp");
+		$text = file_get_contents($temp);
+		file_put_contents($this->file, $text);
+		unlink($temp);
+	}
+}
+
+class ComposerLock {
+
+	public $data;
+	public $file;
+
+	public function open(){
+
+		$project = new \Project;
+
+		$files = array(
+			$project->getRootDir().'/composer.lock'
+		);
+
+		$fileFound = false;
+		$filePath = null;
+		foreach ($files as $file){
+			if (is_file($file) == false){
+				continue;
+			}
+			$fileFound = true;
+			$filePath = $file;
+			break;
+		}
+
+		if (empty($fileFound)){
+			\Logger::warn("Composer lock file is not found");
+			return false;
+		}
+
+		if (($data = json_decode(file_get_contents($filePath))) == false){
+			\Logger::warn("JSON parse fail");
+			$this->data = new \stdClass;
+			return false;
+		}
+
+		$this->file = $filePath;
+		$this->data = $data;
+		return true;
+	}
+
+	public function addPackage(\Package $package){
+
+		$data = new \stdClass;
+		$data->name = $package->name;
+		$data->version = $package->getVersionText();
+		$data->source = new \stdClass;
+		$data->source->type = 'git';
+		$data->source->url = $package->remoteUrl;
+		$data->source->reference = $package->getCurrentCommit();
+		$data->type = 'library';
+		$data->license = array('GPL-2.0-only');
+		$data->description = '';
+		$data->time = date('r');
+
+		$packageFound = false;
+		foreach ($this->data->packages as $packageIndex => $packageItem){
+			if ($packageItem->name == $package->name){
+				$this->data->packages[$packageIndex] = $data;
+				$packageFound = true;
+				break;
+			}
+		}
+
+		if ($packageFound == false){
+			$this->data->packages[] = $data;
+		}
+	}
+
+	public function save(){
+		$temp = tempnam(sys_get_temp_dir(), 'php.');
+		$text = json_encode($this->data);
+		file_put_contents($this->file, $text);
+		\Console::exec("json_pp < ".$this->file." > $temp");
+		$text = file_get_contents($temp);
+		file_put_contents($this->file, $text);
+		unlink($temp);
+
+	}
+}
+
+class ComposerCommand {
+
+	protected $command;
+
+	public function __construct(){
+		$this->command = $_SERVER['HOME'].'/bin/composer';
+	}
+
+	public function createAutoload(){
+		\Console::exec($this->command.' dump-autoload');
 	}
 }
 
 class Project {
 
-	public function getPackages(){
+	public function getRootDir(){
+		return getcwd();
+	}
 
-		$config = new \Config;
+	public function getVendorDir(){
+		return getcwd().'/vendor';
+	}
+
+	public function getPackages(){
+		$config = new \PackageConfig;
 		$packages = $config->getPackages();
 		return $packages;
 	}
@@ -88,11 +476,12 @@ class Project {
 class Package {
 
 	public $name;
+	public $branchName;
 	public $version;
+	public $versionType;
+	public $remoteUrl;
 
 	public function printStatus() {
-
-		$console = new \Console;
 
 		if ($this->name == 'php') {
 			return TRUE;
@@ -100,15 +489,15 @@ class Package {
 
 		$command = $this->getGitCommand().' status --short';
 
-		$text = $console->text($command);
+		$text = \Console::text($command);
 		if (empty($text) == false) {
-			echo("M  ".$this->name."\n");
+			echo("M  vendor/".$this->name."\n");
 			return true;
 		}
 
 		$gitRemoteCommit = '';
 		$command = $this->getGitCommand().' ls-remote origin '.$this->getCurrentBranch();
-		$text = $console->text($command);
+		$text = \Console::text($command);
 		if (empty($text) == false) {
 			$item = explode("\t", $text);
 			if (count($item) == 2) {
@@ -132,20 +521,80 @@ class Package {
 	}
 
 	public function getCurrentBranch() {
-		$console = new \Console;
 		$command = $this->getGitCommand().' rev-parse --abbrev-ref HEAD';
-		return $console->text($command);
+		return \Console::text($command);
 	}
 
 	public function getCurrentCommit() {
-		$console = new \Console;
 		$command = $this->getGitCommand().' log -n 1 --format=%H HEAD';
-		return $console->text($command);
+		return \Console::text($command);
 	}
+
+	/**
+	 * Get status
+	 *  0: no change 1: has changes
+	 **/
+
+	public function getStatus(){
+		$command = $this->getGitCommand().' status --short';
+		$output  = \Console::text($command);
+		if (empty($output)){
+			return 0;
+		}
+		return 1;
+	}
+
+	public function exist(){
+
+		if (	is_dir('vendor/'.$this->name)
+			&&	is_dir('vendor/'.$this->name.'/.git')
+			){
+			return true;
+		}
+
+		return false;
+	}
+
+	public function create(){
+
+		$dir = 'vendor/'.$this->name;
+		$parentDir = dirname($dir);
+		if (is_dir($parentDir) == false){
+			mkdir($parentDir);
+		}
+		if (is_dir($dir) == false){
+			mkdir($dir);
+		}
+
+		\Logger::debug("Install package {$this->name} ..");
+
+		$command = 'git init '.$dir;
+		\Console::exec($command);
+
+		$command = $this->getGitCommand().' remote add composer '.$this->remoteUrl;
+		\Console::exec($command);
+
+		$command = $this->getGitCommand().' remote add origin '.$this->remoteUrl;
+		\Console::exec($command);
+
+		$command = $this->getGitCommand().' fetch origin '.$this->branchName;
+		\Console::exec($command);
+
+		$command = $this->getGitCommand().' checkout '.$this->version.' -b '.$this->branchName;
+		\Console::exec($command);
+	}
+
+	public function getVersionText(){
+		if ($this->versionType == 'branch'){
+			return 'dev-'.$this->version;
+		} else {
+			throw new \Exception("Unsupported versionType: {$this->versionType}");
+		}
+	}
+
 }
 
 // -- Controller --
 
-$command = new \Command;
-$command->exec();
+$controller = new \PackageController;
 
