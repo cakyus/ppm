@@ -4,9 +4,9 @@ class Console {
 
 	public static function exec($command){
 
-		if (error_reporting() & E_USER_NOTICE){
-			fwrite(STDERR, "> $command\n");
-		}
+		//~ if (error_reporting() & E_USER_NOTICE){
+			//~ fwrite(STDERR, "> $command\n");
+		//~ }
 
 		passthru($command, $exitCode);
 		if ($exitCode != 0){
@@ -16,9 +16,9 @@ class Console {
 
 	public static function text($command){
 
-		if (error_reporting() & E_USER_NOTICE){
-			fwrite(STDERR, "> $command\n");
-		}
+		//~ if (error_reporting() & E_USER_NOTICE){
+			//~ fwrite(STDERR, "> $command\n");
+		//~ }
 
 		exec($command, $outputLines, $exitCode);
 		if ($exitCode != 0){
@@ -29,9 +29,9 @@ class Console {
 
 	public static function line($command){
 
-		if (error_reporting() & E_USER_NOTICE){
-			fwrite(STDERR, "> $command\n");
-		}
+		//~ if (error_reporting() & E_USER_NOTICE){
+			//~ fwrite(STDERR, "> $command\n");
+		//~ }
 
 		exec($command, $outputLines, $exitCode);
 		if ($exitCode != 0){

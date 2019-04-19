@@ -290,4 +290,90 @@ class PpmCommand extends \Pdr\Ppm\Command {
 		}
 	}
 
+	/**
+	 * Save autoload
+	 **/
+
+	public function commandSave(){
+
+		$project = new \Pdr\Ppm\Project;
+
+		$autoloadFile = $project->getVendorDir().'/autoload.php';
+		$autoloadText  = "<?php\n\nfunction ppmAutoload(\$className){\n\n";
+		$autoloadText .= "\t\$vendorDir = dirname(__FILE__);\n";
+		$autoloadText .= "\t\$projectDir = dirname(\$vendorDir);\n\n";
+
+		$config = $project->getConfig();
+		if (isset($config->data->autoload)){
+
+			foreach ($config->data->autoload as $autoloadMethod => $autoload){
+
+				// psr-4
+				if ($autoloadMethod == 'psr-4'){
+					foreach ($autoload as $classPrefix => $pathPrefix){
+						$classPrefixLength = strlen($classPrefix);
+						$autoloadText .= "\tif (substr(\$className,0,$classPrefixLength) == '".str_replace('\\', '\\\\', $classPrefix)."'){\n";
+						$autoloadText .= "\t\t\$classFile = \$projectDir.'/$pathPrefix'.str_replace('\\\\','/',substr(\$className, $classPrefixLength)).'.php';\n";
+						$autoloadText .= "\t\tif (is_file(\$classFile)){ require_once(\$classFile); }\n";
+						$autoloadText .= "\t}\n\n";
+					}
+				} elseif ($autoloadMethod == 'psr-0'){
+					foreach ($autoload as $classPrefix => $pathPrefix){
+						$classPrefixLength = strlen($classPrefix);
+						$autoloadText .= "\tif (substr(\$className,0,$classPrefixLength) == '".str_replace('\\', '\\\\', $classPrefix)."'){\n";
+						//~ $autoloadText .= "echo '$classPrefix '.substr(\$className,0,$classPrefixLength).\"\\n\";\n";
+						$autoloadText .= "\t\t\$classFile = \$projectDir.'/$pathPrefix.str_replace('\\\\','/',\$className).'.php';\n";
+						//~ $autoloadText .= "echo \"\$classFile\\n\";\n";
+						$autoloadText .= "\t\tif (is_file(\$classFile)){ require_once(\$classFile); }\n";
+						$autoloadText .= "\t}\n\n";
+					}
+				} else {
+					throw new \Exception("Unsupported autoloadMethod: {$autoloadMethod}");
+				}
+			}
+		}
+
+		foreach ($project->getPackages() as $package){
+
+			$config = $package->getConfig();
+			if (isset($config->data->autoload) == false){
+				continue;
+			}
+
+			foreach ($config->data->autoload as $autoloadMethod => $autoload){
+
+				// psr-4
+				if ($autoloadMethod == 'psr-4'){
+					foreach ($autoload as $classPrefix => $pathPrefix){
+						$classPrefixLength = strlen($classPrefix);
+						$pathPrefix = '$vendorDir.\'/'.$package->name.'/'.$pathPrefix.'\'';
+						$autoloadText .= "\tif (substr(\$className,0,$classPrefixLength) == '".str_replace('\\', '\\\\', $classPrefix)."'){\n";
+						//~ $autoloadText .= "echo '$classPrefix '.substr(\$className,0,$classPrefixLength).\"\\n\";\n";
+						$autoloadText .= "\t\t\$classFile = $pathPrefix.str_replace('\\\\','/',substr(\$className, $classPrefixLength)).'.php';\n";
+						//~ $autoloadText .= "echo \"\$classFile\\n\";\n";
+						$autoloadText .= "\t\tif (is_file(\$classFile)){ require_once(\$classFile); }\n";
+						$autoloadText .= "\t}\n\n";
+					}
+				} elseif ($autoloadMethod == 'psr-0'){
+					foreach ($autoload as $classPrefix => $pathPrefix){
+						$classPrefixLength = strlen($classPrefix);
+						$pathPrefix = '$vendorDir.\'/'.$package->name.'/'.$pathPrefix.'\'';
+						$autoloadText .= "\tif (substr(\$className,0,$classPrefixLength) == '".str_replace('\\', '\\\\', $classPrefix)."'){\n";
+						//~ $autoloadText .= "echo '$classPrefix '.substr(\$className,0,$classPrefixLength).\"\\n\";\n";
+						$autoloadText .= "\t\t\$classFile = $pathPrefix.str_replace('\\\\','/',\$className).'.php';\n";
+						//~ $autoloadText .= "echo \"\$classFile\\n\";\n";
+						$autoloadText .= "\t\tif (is_file(\$classFile)){ require_once(\$classFile); }\n";
+						$autoloadText .= "\t}\n\n";
+					}
+				} else {
+					throw new \Exception("Unsupported autoloadMethod: {$autoloadMethod}");
+				}
+			}
+
+		}
+
+		$autoloadText .= "}\n\nspl_autoload_register('ppmAutoload');\n";
+
+		file_put_contents($autoloadFile, $autoloadText);
+	}
 }
