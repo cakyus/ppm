@@ -4,8 +4,4 @@ PHP Package Manager
 
  * Doest not perform unnecessary actions.
  * Integration with `git` as much as possible.
-
-# TODO
-
- * Remove any dependencies from `composer`, ie. `dump-autoload`.
-
+ * Maintain compatibility with `composer`.
