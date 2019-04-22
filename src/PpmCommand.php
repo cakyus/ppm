@@ -376,4 +376,29 @@ class PpmCommand extends \Pdr\Ppm\Command {
 
 		file_put_contents($autoloadFile, $autoloadText);
 	}
+
+	/**
+	 * Update remote references
+	 **/
+
+	public function commandUpdate() {
+
+		$project = new \Pdr\Ppm\Project;
+		foreach ($project->getPackages() as $package){
+
+			$packageVersion = $package->getVersion();
+
+			echo $package->name.' '.$package->version.' '.$package->getVersion()."\n";
+
+			if ( ! $repository = $package->getRepository() ){
+				continue;
+			}
+
+			if ( ! $remote = $repository->getRemote('origin') ){
+				continue;
+			}
+
+			$remote->fetch($packageVersion);
+		}
+	}
 }

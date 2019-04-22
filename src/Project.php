@@ -24,7 +24,8 @@ class Project {
 
 	public function __construct() {
 
-		$packagePath = getcwd();
+		//~ $packagePath = getcwd();
+		$packagePath = '.';
 
 		$file = $packagePath.'/composer.json';
 		if (is_file($file) == false){

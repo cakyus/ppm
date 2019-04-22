@@ -31,5 +31,45 @@ class Repository {
 		$this->gitDir = $gitDir;
 		$this->workTree = $workTree;
 	}
+
+	public function getGitCommand() {
+		$command = 'git';
+		if (empty($this->workTree) == false){
+			$command .= ' '.escapeshellarg('--work-tree='.$this->workTree);
+		}
+		$command .= ' '.escapeshellarg('--git-dir='.$this->gitDir);
+		return $command;
+	}
+
+	public function getRemotes() {
+
+		$remotes = array();
+		$command  = $this->getGitCommand();
+		$command .= ' remote --verbose';
+		foreach (\Pdr\Ppm\Console::line($command) as $line){
+
+			$match = preg_split("/\s+/", $line);
+
+			$remoteName = $match[0];
+			$remoteUrl = $match[1];
+
+			$remote = new \Pdr\Ppm\Remote($this);
+			$remote->name = $remoteName;
+			$remote->url = $remoteUrl;
+
+			$remotes[] = $remote;
+		}
+
+		return $remotes;
+	}
+
+	public function getRemote($remoteName) {
+		foreach ($this->getRemotes() as $remote){
+			if ($remote->name == $remoteName){
+				return $remote;
+			}
+		}
+		return false;
+	}
 }
 

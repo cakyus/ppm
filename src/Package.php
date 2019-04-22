@@ -47,7 +47,7 @@ class Package {
 		$repositoryPath = $this->getPath();
 
 		if (is_dir($repositoryPath) == false){
-			\Pdr\Logger::warn("repositoryPath is not found: '$repositoryPath'");
+			\Pdr\Logger::warn("Package not installed: {$this->name}");
 			return false;
 		}
 
@@ -55,6 +55,28 @@ class Package {
 		$repository->open($repositoryPath.'/.git', $repositoryPath);
 
 		return $repository;
+	}
+
+	public function getVersion() {
+
+		if (preg_match("/^dev\-(.+)/", $this->version, $match)){
+			return $match[1];
+		}
+
+		throw new \Exception("Parse error");
+	}
+
+	/**
+	 * @return string branch|tag
+	 **/
+
+	public function getVersionType() {
+
+		if (preg_match("/^dev\-(.+)/", $this->version, $match)){
+			return 'branch';
+		}
+
+		throw new \Exception("Parse error");
 	}
 }
 
