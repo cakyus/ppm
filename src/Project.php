@@ -55,10 +55,9 @@ class Project {
 	}
 
 	public function getVendorDir(){
-		if ($this->path == '.'){
-			return 'vendor';
-		}
-		return $this->path.'/vendor';
+		$vendorDir = $this->path.'/vendor';
+		$vendorDir = preg_replace("/^\.\//", '', $vendorDir);
+		return $vendorDir;
 	}
 
 	public function getPackages(){
