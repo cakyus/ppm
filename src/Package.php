@@ -30,10 +30,68 @@ class Package {
 		$this->version = $version;
 	}
 
+	public function install() {
+
+		if (	is_dir($this->project->getVendorDir().'/'.$this->name)
+			&&	is_dir($this->project->getVendorDir().'/'.$this->name.'/.git')
+			){
+			return true;
+		}
+
+		$repositoryPath = $this->project->getVendorDir().'/'.$this->name;
+		$repositoryDir  = dirname($repositoryPath);
+
+		if (is_dir($this->project->getVendorDir()) == false){
+			mkdir($this->project->getVendorDir());
+		}
+
+		if (is_dir($repositoryDir) == false){
+			mkdir($repositoryDir);
+		}
+
+		if (is_dir($repositoryPath) == false){
+			mkdir($repositoryPath);
+		}
+
+		$repositoryUrl = $this->getRepositoryUrl();
+
+		if (empty($repositoryUrl)){
+			\Pdr\Ppm\Logger::error("Repository does not exists: {$this->name}");
+		}
+
+		$gitCommand = 'git'
+			.' --git-dir '.$repositoryPath.'/.git'
+			.' --work-tree '.$repositoryPath
+			;
+
+		\Pdr\Ppm\Console::exec('git init '.$repositoryPath);
+		\Pdr\Ppm\Console::exec($gitCommand.' remote add composer '.$repositoryUrl);
+		\Pdr\Ppm\Console::exec($gitCommand.' remote add origin '.$repositoryUrl);
+
+		\Pdr\Ppm\Console::exec($gitCommand.' fetch origin '.$this->getVersion());
+
+		\Pdr\Ppm\Console::exec($gitCommand.' checkout origin/'.$this->getVersion(). ' -b '.$this->getVersion());
+	}
+
+	public function getRepositoryUrl() {
+
+		$config = new \Pdr\Ppm\GlobalConfig;
+		$config->open();
+
+		foreach ($config->data->repositories as $repositoryName => $repository){
+			if ($repositoryName == $this->name){
+				return $repository->url;
+			}
+		}
+
+		return false;
+	}
+
+
 	public function getConfig(){
 
 		$config = new \Pdr\Ppm\Config;
-		$config->open($this);
+		$config->openPackage($this);
 
 		return $config;
 	}
@@ -47,7 +105,6 @@ class Package {
 		$repositoryPath = $this->getPath();
 
 		if (is_dir($repositoryPath) == false){
-			\Pdr\Logger::warn("Package not installed: {$this->name}");
 			return false;
 		}
 
@@ -56,6 +113,10 @@ class Package {
 
 		return $repository;
 	}
+
+	/**
+	 * Get git reference, ie. branchName, tagName, or commitHash
+	 **/
 
 	public function getVersion() {
 

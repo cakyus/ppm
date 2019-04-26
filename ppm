@@ -290,7 +290,7 @@ class Package {
 			return true;
 		}
 
-		echo(' M '.$this->name."\n");
+		echo(' M vendor/'.$this->name."\n");
 	}
 
 	protected function getGitCommand() {
@@ -390,6 +390,7 @@ class Package {
 	public function create(){
 
 		$dir = 'vendor/'.$this->name;
+
 		$parentDir = dirname($dir);
 		if (is_dir($parentDir) == false){
 			mkdir($parentDir);

@@ -22,31 +22,29 @@ class Config {
 	protected $file;
 	public $data;
 
-	public function loadFile($file){
+	public function __construct() {}
+
+	public function load($file){
 
 		if (is_file($file) == false){
-			throw new \Exception("File is not found");
+			return false;
 		}
 
 		$text = file_get_contents($file);
 		$data = json_decode($text);
+		if (json_last_error()){
+			\Pdr\Ppm\Logger::error("JSON parse error on file $file. ".json_last_error_msg());
+		}
 
 		$this->data = $data;
 		$this->file = $file;
+
+		return true;
 	}
 
-	public function open(\Pdr\Ppm\Package $package){
-
+	public function openPackage(\Pdr\Ppm\Package $package){
 		$file = $package->getPath().'/composer.json';
-		if (is_file($file) == false){
-			throw new \Exception("composer.json is not found");
-		}
-
-		$text = file_get_contents($file);
-		$data = json_decode($text);
-
-		$this->data = $data;
-		$this->file = $file;
+		return $this->load($file);
 	}
 
 	public function getData(){

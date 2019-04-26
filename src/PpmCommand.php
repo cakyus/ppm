@@ -28,155 +28,95 @@ class PpmCommand extends \Pdr\Ppm\Command {
 		$this->version = '1.0';
 	}
 
-	public function commandInstall($packageText){
+	public function commandInstall($packageText=null){
 
 		if (is_null($packageText)){
 
-			$composerLock = new \ComposerLock;
-			$composerLock->open();
-			foreach ($composerLock->data->packages as $package){
-				$this->installPackage($package->name.':'.$package->source->reference);
+			$project = new \Pdr\Ppm\Project;
+			foreach ($project->getPackages() as $package){
+				$package->install();
 			}
+
+			$this->commandSave();
 
 		} else {
 
-			if ($package = $this->installPackage($packageText)) {
-
-				$configLocal = new \ComposerConfigLocal;
-				$configLocal->open();
-				$configLocal->addPackage($package);
-				$configLocal->save();
-
-				$composerLock = new \ComposerLock;
-				$composerLock->open();
-				$composerLock->addPackage($package);
-				$composerLock->save();
-
-			} else {
-				throw new \Exception("Install package fail");
-			}
-
+			$project = new \Pdr\Ppm\Project;
+			$project->addPackage($packageText);
 		}
-
-		$composerCommand = new \ComposerCommand;
-		$composerCommand->createAutoload();
 	}
 
 	/**
-	 * Install package
-	 *
-	 * @param $package VENDOR_NAME/PROJECT_NAME[:VERSION]
+	 * Print local, local vs lock, dan remote (cache) vs lock statuses
 	 **/
-
-	protected function installPackage($package){
-
-		// pdr/docker-files:dev-core
-		if (preg_match("/^([^:]+):(.+)$/",$package,$match) == false){
-			throw new \Exception("Parse package fail");
-		}
-
-		$packageName = $match[1];
-		$packageVersion = $match[2];
-
-		if (preg_match("/^dev\-(.+)$/",$packageVersion,$match)){
-			$packageVersion = $match[1];
-			$packageVersionType = 'branch';
-			$packageBranchName = $match[1];
-		} elseif (preg_match("/^([0-9a-f]{40,40})$/",$packageVersion,$match)){
-			$packageVersion = $match[1];
-			$packageVersionType = 'commit';
-		} else {
-			throw new \Exception("Parse package fail. '$packageVersion'");
-		}
-
-		// get packageBranchName for packageVersionType commit
-
-		if ($packageVersionType == 'commit'){
-
-			$config = new \ComposerConfigLocal;
-			if ($config->open() == false){
-				return false;
-			}
-
-			$repositoryFound = false;
-			foreach ($config->data->require as $repositoryName => $repositoryVersion){
-				if ($repositoryName != $packageName){
-					continue;
-				}
-				$repositoryFound = true;
-				if (preg_match("/^dev\-(.+)$/",$repositoryVersion,$match)){
-					$packageBranchName = $match[1];
-				} else {
-					throw new \Exception("Parse repositoryVersion fail. '$repositoryVersion'");
-				}
-
-				break;
-			}
-			if (empty($repositoryFound)){
-				throw new \Exception("Repository is not found");
-			}
-		}
-
-		$config = new \ComposerConfigGlobal;
-		if ($config->open() == false){
-			return false;
-		}
-
-		$repositoryFound = false;
-		foreach ($config->data->repositories as $repositoryName => $repository){
-			if ($repositoryName != $packageName){
-				continue;
-			}
-			$repositoryFound = true;
-			break;
-		}
-
-		if (empty($repositoryFound)){
-			throw new \Exception("Repository is not found");
-		}
-
-		// get packageVersion for packageVersionType commit ( packageVersion is not branchName )
-
-		$line = \Console::text("git ls-remote {$repository->url} refs/heads/$packageBranchName");
-		if (empty($line)){
-			\Logger::error("Remote url does not have branch $packageBranchName");
-		}
-
-		if (preg_match("/^([0-9a-f]{40,40})\s+/",$line,$match) == false){
-			throw new \Exception("Parse error");
-		}
-
-		$remoteCommit = $match[1];
-
-		$packageVersion= substr($line, 0, 40);
-
-		$project = new \Project;
-		$packageDir = $project->getVendorDir().'/'.$packageName;
-
-		$package = new \Package;
-		$package->name = $packageName;
-		$package->branchName = $packageBranchName;
-		$package->version = $packageVersion;
-		$package->versionType = $packageVersionType;
-		$package->remoteUrl = $repository->url;
-
-		if ($package->exist() == true){
-			$package->update();
-			return $package;
-		}
-
-		$package->create();
-
-		return $package;
-
-		\Logger::debug("Done");
-	}
 
 	public function commandStatus() {
 
-		$project = new \Project;
+		$project = new \Pdr\Ppm\Project;
 		foreach ($project->getPackages() as $package) {
-			$package->printStatus();
+
+			// local status
+			// check local repository status : initialized, has changes, or no change
+
+			$localStatus = '?'; // Unknown
+
+			if ( ( $repository = $package->getRepository() ) == false ){
+				$localStatus = 'U'; // Un-initialize
+			} else {
+
+				$command  = $repository->getGitCommand();
+				$command .= ' status --short';
+				$text = \Pdr\Ppm\Console::text($command);
+
+				if (empty($text)){
+					$localStatus = ' '; // No local changes
+				} else {
+					$localStatus = 'M'; // Has local changes
+				}
+
+			}
+
+			// lock status
+			// compare repository (HEAD) with composer lock file
+
+			$lockStatus = '?'; // Unknown
+
+			if (	( $localStatus == ' ' || $localStatus == 'M' )
+
+				&&	( $lockConfig = $project->getLockConfig() ) != false
+				&&	( $lockCommitHash = $lockConfig->getPackageCommitHash($package->name) ) != false
+
+				&&	( $repositoryCommitHash = $repository->getCommitHash('HEAD') ) != false
+				){
+
+				if ($repositoryCommitHash == $lockCommitHash){
+					$lockStatus = ' ';
+				} else {
+					$lockStatus = 'M';
+				}
+			}
+
+			// remote status ( query from cache )
+			// compare repository remote with composer lock file
+
+			$remoteStatus = '?'; // Unknown
+
+			if ( ( $lockStatus == ' ' || $lockStatus == 'M' )
+
+				&& ( $remote = $repository->getRemote('origin') ) !== false
+				&& ( $remoteCommitHash = $remote->getCommitHash($package->getVersion()) ) !== false
+				){
+
+				if ($remoteCommitHash == $lockCommitHash){
+					$remoteStatus = ' ';
+				} else {
+					$remoteStatus = 'M';
+				}
+			}
+
+			echo $localStatus.$lockStatus.$remoteStatus
+				.' '.$project->getVendorDir().'/'.$package->name
+				."\n";
 		}
 	}
 
@@ -299,7 +239,9 @@ class PpmCommand extends \Pdr\Ppm\Command {
 		$project = new \Pdr\Ppm\Project;
 
 		$autoloadFile = $project->getVendorDir().'/autoload.php';
-		$autoloadText  = "<?php\n\nfunction ppmAutoload(\$className){\n\n";
+		$autoloadText  = "<?php\n\n";
+		$autoloadText .= "// DO NOT EDIT. THIS FILE IS AUTOGENERATED. ".date('Y-m-d H:i:s')."\n\n";
+		$autoloadText .= "function ppmAutoload(\$className){\n\n";
 		$autoloadText .= "\t\$vendorDir = dirname(__FILE__);\n";
 		$autoloadText .= "\t\$projectDir = dirname(\$vendorDir);\n\n";
 
@@ -373,28 +315,28 @@ class PpmCommand extends \Pdr\Ppm\Command {
 		}
 
 		$autoloadText .= "}\n\nspl_autoload_register('ppmAutoload');\n";
-
 		file_put_contents($autoloadFile, $autoloadText);
 	}
 
 	/**
-	 * Update remote references
+	 * Update remote
 	 **/
 
 	public function commandUpdate() {
 
 		$project = new \Pdr\Ppm\Project;
+
 		foreach ($project->getPackages() as $package){
 
 			$packageVersion = $package->getVersion();
 
-			echo $package->name.' '.$package->version.' '.$package->getVersion()."\n";
+			echo "{$package->name} $packageVersion\n";
 
-			if ( ! $repository = $package->getRepository() ){
+			if ( ( $repository = $package->getRepository() ) === false ){
 				continue;
 			}
 
-			if ( ! $remote = $repository->getRemote('origin') ){
+			if ( ( $remote = $repository->getRemote('origin') ) === false ){
 				continue;
 			}
 

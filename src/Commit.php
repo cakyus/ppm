@@ -17,34 +17,22 @@
 
 namespace Pdr\Ppm;
 
-class LockConfig extends \Pdr\Ppm\Config {
+class Commit {
 
-	public function __construct() {
-		parent::__construct();
-	}
+	public $commitHash;
 
-	public function getPackage($packageName) {
+	public function open(\Pdr\Ppm\Repository $repository, $commitReference){
 
-		foreach ($this->data->packages as $packageData){
-			if ($packageData->name == $packageName){
-				return $packageData;
-			}
-		}
+		$command  = $repository->getGitCommand();
+		$command .= " log --format='%H' -n 1 $commitReference";
 
-		return false;
-	}
-
-	public function getPackageCommitHash($packageName) {
-
-		if ( ( $packageData = $this->getPackage($packageName) ) === false ){
+		$commitHash = \Pdr\Ppm\Console::text($command);
+		if (empty($commitHash)){
 			return false;
 		}
 
-		if (empty( $packageData->source->reference) ){
-			return false;
-		}
+		$this->commitHash = $commitHash;
 
-		return $packageData->source->reference;
+		return true;
 	}
 }
-

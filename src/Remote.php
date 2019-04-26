@@ -44,6 +44,34 @@ class Remote {
 
 	}
 
+	/**
+	 * @return \Pdr\Ppm\Commit|boolean
+	 **/
+
+	public function getCommit($commitReference) {
+
+		$commit = new \Pdr\Ppm\Commit;
+
+		if ($commit->open($this->repository, $this->name.'/'.$commitReference)){
+			return $commit;
+		}
+
+		return false;
+	}
+
+	/**
+	 * @return string|boolean
+	 **/
+
+	public function getCommitHash($commitReference) {
+
+		if ( ( $commit = $this->getCommit($commitReference) ) !== false ){
+			return $commit->commitHash;
+		}
+
+		return false;
+	}
+
 	public function fetch($refspec) {
 
 		$command  = $this->repository->getGitCommand();

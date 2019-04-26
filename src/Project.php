@@ -24,18 +24,17 @@ class Project {
 
 	public function __construct() {
 
-		//~ $packagePath = getcwd();
 		$packagePath = '.';
 
 		$file = $packagePath.'/composer.json';
 		if (is_file($file) == false){
-			throw new \Exception("composer.json is not found");
+			\Pdr\Ppm\Logger::warn("composer.json is not found");
 		}
 
 		$config = new \Pdr\Ppm\Config;
-		$config->loadFile($file);
-
+		$config->load($file);
 		$this->config = $config;
+
 		$this->path = $packagePath;
 	}
 
@@ -43,11 +42,22 @@ class Project {
 		return $this->config;
 	}
 
+	public function getLockConfig() {
+		$file = $this->getPath().'/composer.lock';
+		$lockConfig = new \Pdr\Ppm\LockConfig;
+		$lockConfig->load($file);
+		return $lockConfig;
+	}
+
+
 	public function getPath(){
 		return $this->path;
 	}
 
 	public function getVendorDir(){
+		if ($this->path == '.'){
+			return 'vendor';
+		}
 		return $this->path.'/vendor';
 	}
 
@@ -58,9 +68,38 @@ class Project {
 		foreach ($this->config->data->require as $packageName => $packageVersion){
 			$package = new \Pdr\Ppm\Package;
 			$package->open($this, $packageName, $packageVersion);
-			$packages[] = $package;
+			$packages[$packageName] = $package;
 		}
 
 		return $packages;
+	}
+
+	public function getPackage($packageName){
+
+		$packages = $this->getPackages();
+		if (isset($packages[$packageName])){
+			return $packages[$packageName];
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param $packageText
+	 **/
+
+	public function addPackage($packageText){
+
+		if (preg_match("/^([^\/]+\/[^:]+):(.+)/", $packageText, $match) == false){
+			\Pdr\Ppm\Logger::error('Parse error');
+		}
+
+		$packageName = $match[1];
+		$packageVersion = $match[2];
+
+		$package = new \Pdr\Ppm\Package;
+		$package->open($this, $packageName, $packageVersion);
+
+		$package->install();
 	}
 }

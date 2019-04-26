@@ -63,6 +63,35 @@ class Repository {
 		return $remotes;
 	}
 
+	/**
+	 * @return \Pdr\Ppm\Commit|boolean
+	 **/
+
+	public function getCommit($commitReference) {
+
+		$commit = new \Pdr\Ppm\Commit;
+
+		if ($commit->open($this, $commitReference)){
+			return $commit;
+		}
+
+		return false;
+	}
+
+	/**
+	 * @return string|boolean
+	 **/
+
+	public function getCommitHash($commitReference) {
+
+		if ( ( $commit = $this->getCommit($commitReference) ) !== false ){
+			return $commit->commitHash;
+		}
+
+		return false;
+	}
+
+
 	public function getRemote($remoteName) {
 		foreach ($this->getRemotes() as $remote){
 			if ($remote->name == $remoteName){
