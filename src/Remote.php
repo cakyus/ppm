@@ -75,7 +75,7 @@ class Remote {
 	public function fetch($refspec) {
 
 		$command  = $this->repository->getGitCommand();
-		$command .= ' fetch ';
+		$command .= ' fetch --quiet ';
 		if (empty($this->name) == false){
 			$command .= ' '.$this->name;
 		} else {
