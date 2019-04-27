@@ -47,7 +47,7 @@ class PpmCommand extends \Pdr\Ppm\Command {
 	}
 
 	/**
-	 * Print local, local vs lock, dan remote (cache) vs lock statuses
+	 * Print statuses : local, local vs lock, and remote (cache) vs lock
 	 **/
 
 	public function commandStatus() {
