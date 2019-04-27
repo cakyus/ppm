@@ -33,8 +33,8 @@ class Project {
 
 		$config = new \Pdr\Ppm\Config;
 		$config->load($file);
-		$this->config = $config;
 
+		$this->config = $config;
 		$this->path = $packagePath;
 	}
 
@@ -63,6 +63,10 @@ class Project {
 	public function getPackages(){
 
 		$packages = array();
+
+		if (empty($this->config->data->require)) {
+			return $packages;
+		}
 
 		foreach ($this->config->data->require as $packageName => $packageVersion){
 			$package = new \Pdr\Ppm\Package;

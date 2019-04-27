@@ -96,6 +96,14 @@ class Package {
 		return $config;
 	}
 
+	public function getLockConfig(){
+
+		$config = new \Pdr\Ppm\LockConfig;
+		$config->open($this);
+
+		return $config;
+	}
+
 	public function getPath(){
 		return $this->project->path.'/vendor/'.$this->name;
 	}

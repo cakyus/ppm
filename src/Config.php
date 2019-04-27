@@ -22,7 +22,7 @@ class Config {
 	protected $file;
 	public $data;
 
-	public function __construct() {}
+	public function __construct(){}
 
 	public function load($file){
 
@@ -42,7 +42,7 @@ class Config {
 		return true;
 	}
 
-	public function openPackage(\Pdr\Ppm\Package $package){
+	public function open(\Pdr\Ppm\Package $package){
 		$file = $package->getPath().'/composer.json';
 		return $this->load($file);
 	}

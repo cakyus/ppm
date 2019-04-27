@@ -23,6 +23,11 @@ class LockConfig extends \Pdr\Ppm\Config {
 		parent::__construct();
 	}
 
+	public function open(\Pdr\Ppm\Package $package){
+		$file = $package->getPath().'/composer.lock';
+		$this->load($file);
+	}
+
 	public function getPackage($packageName) {
 
 		foreach ($this->data->packages as $packageData){
