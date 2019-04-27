@@ -21,37 +21,29 @@ class Console {
 
 	public static function exec($command){
 
-		//~ if (error_reporting() & E_USER_NOTICE){
-			//~ fwrite(STDERR, "> $command\n");
-		//~ }
-
 		passthru($command, $exitCode);
 		if ($exitCode != 0){
+			fwrite(STDERR, "> $command\n");
 			throw new \Exception("Command return non zero exit code");
 		}
 	}
 
 	public static function text($command){
 
-		//~ if (error_reporting() & E_USER_NOTICE){
-			//~ fwrite(STDERR, "> $command\n");
-		//~ }
-
 		exec($command, $outputLines, $exitCode);
 		if ($exitCode != 0){
+			fwrite(STDERR, "> $command\n");
 			throw new \Exception("Command return non zero exit code");
 		}
+
 		return implode("\n", $outputLines);
 	}
 
 	public static function line($command){
 
-		//~ if (error_reporting() & E_USER_NOTICE){
-			//~ fwrite(STDERR, "> $command\n");
-		//~ }
-
 		exec($command, $outputLines, $exitCode);
 		if ($exitCode != 0){
+			fwrite(STDERR, "> $command\n");
 			throw new \Exception("Command return non zero exit code");
 		}
 		return $outputLines;
