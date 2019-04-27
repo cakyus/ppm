@@ -23,6 +23,8 @@ class Commit {
 
 	public function open(\Pdr\Ppm\Repository $repository, $commitReference){
 
+		// TODO check if $commitReference is a commitHash
+
 		$command  = $repository->getGitCommand();
 		$command .= " log --format='%H' -n 1 $commitReference";
 

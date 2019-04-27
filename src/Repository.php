@@ -100,5 +100,9 @@ class Repository {
 		}
 		return false;
 	}
+
+	public function getGitDir() {
+		return $this->gitDir;
+	}
 }
 

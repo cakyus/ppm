@@ -50,13 +50,18 @@ class Remote {
 
 	public function getCommit($commitReference) {
 
-		$commit = new \Pdr\Ppm\Commit;
+		$gitDir = $this->repository->getGitDir();
+		$file = $gitDir.'/refs/remotes/'.$this->name.'/'.$commitReference;
 
-		if ($commit->open($this->repository, $this->name.'/'.$commitReference)){
-			return $commit;
+		if (is_file($file) == false) {
+			return false;
 		}
 
-		return false;
+		$commitHash = file_get_contents($file);
+
+		$commit = new \Pdr\Ppm\Commit;
+		$commit->open($this->repository, $commitHash);
+		return $commit;
 	}
 
 	/**
