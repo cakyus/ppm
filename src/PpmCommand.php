@@ -314,6 +314,10 @@ class PpmCommand extends \Pdr\Ppm\Command {
 
 		}
 
+		if (is_dir(dirname($autoloadFile)) == false) {
+			mkdir(dirname($autoloadFile));
+		}
+
 		$autoloadText .= "}\n\nspl_autoload_register('ppmAutoload');\n";
 		file_put_contents($autoloadFile, $autoloadText);
 	}
