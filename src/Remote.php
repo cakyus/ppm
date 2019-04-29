@@ -80,7 +80,7 @@ class Remote {
 	public function fetch($refspec) {
 
 		$command  = $this->repository->getGitCommand();
-		$command .= ' fetch --quiet ';
+		$command .= ' fetch --quiet --depth=1 ';
 		if (empty($this->name) == false){
 			$command .= ' '.$this->name;
 		} else {
