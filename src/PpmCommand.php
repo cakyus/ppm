@@ -68,10 +68,10 @@ class PpmCommand extends \Pdr\Ppm\Command {
 				$command .= ' status --short';
 				$text = \Pdr\Ppm\Console::text($command);
 
-				if (empty($text)){
-					$localStatus = ' '; // No local changes
-				} else {
+				if ($repository->hasChanges()){
 					$localStatus = 'M'; // Has local changes
+				} else {
+					$localStatus = ' '; // No local changes
 				}
 
 			}
@@ -114,6 +114,13 @@ class PpmCommand extends \Pdr\Ppm\Command {
 				}
 			}
 
+			if (	$localStatus == ' '
+				&&	$lockStatus == ' '
+				&&	$remoteStatus == ' '
+				){
+				continue;
+			}
+
 			echo $localStatus.$lockStatus.$remoteStatus
 				.' '.$project->getVendorDir().'/'.$package->name
 				."\n";
@@ -126,12 +133,15 @@ class PpmCommand extends \Pdr\Ppm\Command {
 
 	public function commandLock(){
 
-		$project = new \Project;
+		$project = new \Pdr\Ppm\Project;
 
 		foreach ($project->getPackages() as $package){
 
-			$packageStatus = $package->getStatus();
-			if (empty($packageStatus) == false){
+			if ( ( $repository = $package->getRepository() ) == false ){
+				throw new \Exception("Package not installed : ".$package->name);
+			}
+
+			if ($repository->hasChanges()){
 				\Logger::error("Change exist on package {$package->name}");
 			}
 
@@ -142,17 +152,19 @@ class PpmCommand extends \Pdr\Ppm\Command {
 			foreach ($composerLock->data->packages as $packageLock){
 				if ($packageLock->name == $package->name){
 					$packageLockFound = true;
-					\Logger::debug("Check packageLock {$packageLock->name}");
-					\Logger::debug($packageLock->source->reference.' => '.$package->getCurrentCommit());
-					if ($packageLock->source->reference != $package->getCurrentCommit()){
-						\Logger::debug("Update {$package->name}");
-						$packageLock->source->reference = $package->getCurrentCommit();
+					$repositoryCurrentCommit = $repository->getCommitHash('HEAD');
+					\Logger::debug("Check packageLock ".$packageLock->name);
+					\Logger::debug($packageLock->source->reference.' => '.$repositoryCurrentCommit);
+					if ($packageLock->source->reference != $repositoryCurrentCommit){
+						\Logger::debug("Update ".$package->name);
+						$packageLock->source->reference = $repositoryCurrentCommit;
 					}
 				}
 			}
 
-			if (empty($packageLockFound)){
-				$composerLock->addPackage($package);
+			if ($packageLockFound == false){
+				$repositoryCurrentCommit = $repository->getCommitHash('HEAD');
+				$composerLock->addPackage($package->name, $repositoryCurrentCommit);
 			}
 
 			$composerLock->save();

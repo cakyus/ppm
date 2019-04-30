@@ -91,7 +91,7 @@ class Package {
 	public function getConfig(){
 
 		$config = new \Pdr\Ppm\Config;
-		$config->openPackage($this);
+		$config->open($this);
 
 		return $config;
 	}

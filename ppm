@@ -172,9 +172,11 @@ class ComposerLock {
 			return false;
 		}
 
-		if (($data = json_decode(file_get_contents($filePath))) == false){
+		$data = json_decode(file_get_contents($filePath));
+		if (is_null($data)){
 			\Logger::warn("JSON parse fail");
 			$this->data = new \stdClass;
+			$this->data->packages = array();
 			return false;
 		}
 
@@ -183,23 +185,18 @@ class ComposerLock {
 		return true;
 	}
 
-	public function addPackage(\Package $package){
+	public function addPackage($packageName, $packageCommitHash){
 
 		$data = new \stdClass;
-		$data->name = $package->name;
-		$data->version = $package->getVersionText();
+		$data->name = $packageName;
 		$data->source = new \stdClass;
-		$data->source->type = 'git';
-		$data->source->url = $package->remoteUrl;
-		$data->source->reference = $package->getCurrentCommit();
-		$data->type = 'library';
-		$data->license = array('GPL-2.0-only');
-		$data->description = '';
-		$data->time = date('r');
+		$data->source->type = 'cvs';
+		$data->source->reference = $packageCommitHash;
 
+			var_dump($this->data); exit();
 		$packageFound = false;
 		foreach ($this->data->packages as $packageIndex => $packageItem){
-			if ($packageItem->name == $package->name){
+			if ($packageItem->name == $packageName){
 				$this->data->packages[$packageIndex] = $data;
 				$packageFound = true;
 				break;
@@ -207,19 +204,35 @@ class ComposerLock {
 		}
 
 		if ($packageFound == false){
+			var_dump($this->data); exit();
 			$this->data->packages[] = $data;
 		}
 	}
 
 	public function save(){
-		$temp = tempnam(sys_get_temp_dir(), 'php.');
-		$text = json_encode($this->data);
-		file_put_contents($this->file, $text);
-		\Console::exec("json_pp < ".$this->file." > $temp");
-		$text = file_get_contents($temp);
-		file_put_contents($this->file, $text);
-		unlink($temp);
 
+		$data = new \stdClass;
+		$packages = array();
+
+		foreach ($this->data->packages as $package){
+			$packageInfo = new \stdClass;
+			$packageInfo->name = $package->name;
+			$packageInfo->source = new \stdClass;
+			if (empty($package->source->type)){
+				$package->source->type = 'cvs';
+			}
+			$packageInfo->source->type = $package->source->type;
+			$packageInfo->source->reference = $package->source->reference;
+			$packages[$package->name] = $packageInfo;
+		}
+
+		ksort($packages);
+		$packages = array_values($packages);
+
+		$data->packages = $packages;
+
+		$text = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+		file_put_contents($this->file, $text);
 	}
 }
 

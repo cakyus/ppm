@@ -104,5 +104,18 @@ class Repository {
 	public function getGitDir() {
 		return $this->gitDir;
 	}
+
+	public function hasChanges() {
+
+		$command  = $this->getGitCommand();
+		$command .= ' status --short';
+		$text = \Pdr\Ppm\Console::text($command);
+
+		if (empty($text)){
+			return false; // No local changes
+		} else {
+			return true; // Has local changes
+		}
+	}
 }
 
