@@ -28,6 +28,10 @@ class PpmCommand extends \Pdr\Ppm\Command {
 		$this->version = '1.0';
 	}
 
+	/**
+	 * Install package
+	 **/
+
 	public function commandInstall($packageText=null){
 
 		if (is_null($packageText)){
@@ -37,12 +41,46 @@ class PpmCommand extends \Pdr\Ppm\Command {
 				$package->install();
 			}
 
+			// generate autoload
 			$this->commandSave();
+
+			// execute post install command
+			$this->commandExec('post-install-cmd');
 
 		} else {
 
 			$project = new \Pdr\Ppm\Project;
 			$project->addPackage($packageText);
+
+			// generate autoload
+			$this->commandSave();
+
+		}
+	}
+
+	/**
+	 * Update remote
+	 **/
+
+	public function commandUpdate() {
+
+		$project = new \Pdr\Ppm\Project;
+
+		foreach ($project->getPackages() as $package){
+
+			$packageVersion = $package->getVersion();
+
+			echo "{$package->name} $packageVersion\n";
+
+			if ( ( $repository = $package->getRepository() ) === false ){
+				continue;
+			}
+
+			if ( ( $remote = $repository->getRemote('origin') ) === false ){
+				continue;
+			}
+
+			$remote->fetch($packageVersion);
 		}
 	}
 
@@ -153,8 +191,8 @@ class PpmCommand extends \Pdr\Ppm\Command {
 				if ($packageLock->name == $package->name){
 					$packageLockFound = true;
 					$repositoryCurrentCommit = $repository->getCommitHash('HEAD');
-					\Logger::debug("Check packageLock ".$packageLock->name);
-					\Logger::debug($packageLock->source->reference.' => '.$repositoryCurrentCommit);
+// 					\Logger::debug("Check packageLock ".$packageLock->name);
+// 					\Logger::debug($packageLock->source->reference.' => '.$repositoryCurrentCommit);
 					if ($packageLock->source->reference != $repositoryCurrentCommit){
 						\Logger::debug("Update ".$package->name);
 						$packageLock->source->reference = $repositoryCurrentCommit;
@@ -200,45 +238,6 @@ class PpmCommand extends \Pdr\Ppm\Command {
 
 		foreach ($repositories as $repositoryName => $repositoryUrl){
 			echo $repositoryName.' '.$repositoryUrl."\n";
-		}
-	}
-
-	public function commandTest($option = null) {
-
-		// check PHP syntax
-
-		if (is_null($option)){
-			$option = new \stdClass;
-			$testFile = sys_get_temp_dir().'/ppm.test.'.md5(getcwd());
-			$option->testDir = getcwd();
-			$option->testDate = 0;
-			if (is_file($testFile)){
-				$option->testDate = filemtime($testFile);
-			}
-			touch($testFile);
-		}
-
-		if ($dh = opendir($option->testDir)){
-			while (($file = readdir($dh)) !== false){
-				if ($file == '.' || $file == '..'){
-					continue;
-				}
-				$path = $option->testDir.'/'.$file;
-				if (is_dir($path)){
-					$iOption = new \stdClass;
-					$iOption->testDir = $path;
-					$iOption->testDate = $option->testDate;
-					$this->commandTest($iOption);
-				} elseif (substr($path, -4) == '.php') {
-					if (filemtime($path) > $option->testDate){
-						passthru('php -l '.escapeshellarg($path).' >/dev/null 2>&1', $exit);
-						if ($exit){
-							echo "Syntax-Error: $path\n"; exit(1);
-						}
-					}
-				}
-			}
-			closedir($dh);
 		}
 	}
 
@@ -335,28 +334,72 @@ class PpmCommand extends \Pdr\Ppm\Command {
 	}
 
 	/**
-	 * Update remote
+	 * Perform unit test
 	 **/
 
-	public function commandUpdate() {
+	public function commandTest($option = null) {
+
+		// check PHP syntax
+
+		if (is_null($option)){
+			$option = new \stdClass;
+			$testFile = sys_get_temp_dir().'/ppm.test.'.md5(getcwd());
+			$option->testDir = getcwd();
+			$option->testDate = 0;
+			if (is_file($testFile)){
+				$option->testDate = filemtime($testFile);
+			}
+			touch($testFile);
+		}
+
+		if ($dh = opendir($option->testDir)){
+			while (($file = readdir($dh)) !== false){
+				if ($file == '.' || $file == '..'){
+					continue;
+				}
+				$path = $option->testDir.'/'.$file;
+				if (is_dir($path)){
+					$iOption = new \stdClass;
+					$iOption->testDir = $path;
+					$iOption->testDate = $option->testDate;
+					$this->commandTest($iOption);
+				} elseif (substr($path, -4) == '.php') {
+					if (filemtime($path) > $option->testDate){
+						passthru('php -l '.escapeshellarg($path).' >/dev/null 2>&1', $exit);
+						if ($exit){
+							echo "Syntax-Error: $path\n"; exit(1);
+						}
+					}
+				}
+			}
+			closedir($dh);
+		}
+	}
+
+	/**
+	 * Execute composer scripts
+	 **/
+
+	public function commandExec($scriptName) {
 
 		$project = new \Pdr\Ppm\Project;
+		$config = $project->getConfig();
 
-		foreach ($project->getPackages() as $package){
-
-			$packageVersion = $package->getVersion();
-
-			echo "{$package->name} $packageVersion\n";
-
-			if ( ( $repository = $package->getRepository() ) === false ){
-				continue;
-			}
-
-			if ( ( $remote = $repository->getRemote('origin') ) === false ){
-				continue;
-			}
-
-			$remote->fetch($packageVersion);
+		if (empty($config->data->scripts)){
+			return false;
 		}
+
+		foreach ($config->data->scripts as $scripts){
+			foreach ($scripts as $command){
+				\Pdr\Ppm\Logger::debug("Executing [$scriptName] $command");
+				passthru($command, $exitCode);
+				if ($exitCode !== 0){
+					return false;
+				}
+			}
+		}
+
+		\Pdr\Ppm\Logger::debug("Done");
+		return true;
 	}
 }
