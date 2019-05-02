@@ -21,7 +21,7 @@ namespace Pdr\Ppm;
  * PHP Package Manager
  **/
 
-class PpmCommand extends \Pdr\Ppm\Command {
+class Controller extends \Pdr\Ppm\Command {
 
 	public function __construct() {
 		parent::__construct();
