@@ -391,7 +391,7 @@ class PpmCommand extends \Pdr\Ppm\Command {
 
 		foreach ($config->data->scripts as $scripts){
 			foreach ($scripts as $command){
-				\Pdr\Ppm\Logger::debug("Executing [$scriptName] $command");
+				\Pdr\Ppm\Logger::debug("Executing [$scriptName] > $command ..");
 				passthru($command, $exitCode);
 				if ($exitCode !== 0){
 					return false;
@@ -399,7 +399,7 @@ class PpmCommand extends \Pdr\Ppm\Command {
 			}
 		}
 
-		\Pdr\Ppm\Logger::debug("Done");
+		\Pdr\Ppm\Logger::debug("Execute scripts done");
 		return true;
 	}
 }
