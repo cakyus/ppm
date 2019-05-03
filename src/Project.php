@@ -24,9 +24,9 @@ class Project {
 
 	public function __construct() {
 
-		$packagePath = '.';
+		$projectPath = '.';
 
-		$file = $packagePath.'/composer.json';
+		$file = $projectPath.'/composer.json';
 		if (is_file($file) == false){
 			\Pdr\Ppm\Logger::warn("composer.json is not found");
 		}
@@ -35,7 +35,7 @@ class Project {
 		$config->load($file);
 
 		$this->config = $config;
-		$this->path = $packagePath;
+		$this->path = $projectPath;
 	}
 
 	public function getConfig(){

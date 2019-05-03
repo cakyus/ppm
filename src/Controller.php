@@ -191,8 +191,6 @@ class Controller extends \Pdr\Ppm\Command {
 				if ($packageLock->name == $package->name){
 					$packageLockFound = true;
 					$repositoryCurrentCommit = $repository->getCommitHash('HEAD');
-// 					\Logger::debug("Check packageLock ".$packageLock->name);
-// 					\Logger::debug($packageLock->source->reference.' => '.$repositoryCurrentCommit);
 					if ($packageLock->source->reference != $repositoryCurrentCommit){
 						\Logger::debug("Update ".$package->name);
 						$packageLock->source->reference = $repositoryCurrentCommit;
@@ -380,19 +378,29 @@ class Controller extends \Pdr\Ppm\Command {
 	 * Execute composer scripts
 	 **/
 
-	public function commandExec($scriptName) {
+	public function commandExec($scriptName, $workingDirectory=null) {
 
 		$project = new \Pdr\Ppm\Project;
 		$config = $project->getConfig();
-
+		$currentDirectory = getcwd();
+		
 		if (empty($config->data->scripts)){
 			return false;
 		}
 
-		foreach ($config->data->scripts as $scripts){
+		foreach ($config->data->scripts as $eventName => $scripts){
+			if ($eventName != $scriptName){
+				continue;
+			}
 			foreach ($scripts as $command){
 				\Pdr\Ppm\Logger::debug("Executing [$scriptName] > $command ..");
+				if (is_null($workingDirectory) == false){
+					chdir($workingDirectory);
+				}
 				passthru($command, $exitCode);
+				if (is_null($workingDirectory) == false){
+					chdir($currentDirectory);
+				}
 				if ($exitCode !== 0){
 					return false;
 				}

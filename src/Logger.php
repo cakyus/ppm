@@ -19,6 +19,18 @@ namespace Pdr\Ppm;
 
 class Logger {
 
+	public static function deprecated($message){
+		if (error_reporting() & E_USER_NOTICE){
+			fwrite(STDERR, date('Y-m-d+H:i:s')." DEPRECATED $message\n");
+		}
+	}
+
+	public static function info($message){
+		if (error_reporting() & E_USER_NOTICE){
+			fwrite(STDERR, date('Y-m-d+H:i:s')." INFO  $message\n");
+		}
+	}
+
 	public static function debug($message){
 		if (error_reporting() & E_USER_NOTICE){
 			fwrite(STDERR, date('Y-m-d+H:i:s')." DEBUG $message\n");
