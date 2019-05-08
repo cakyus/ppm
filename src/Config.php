@@ -26,6 +26,8 @@ class Config {
 
 	public function load($file){
 
+		$this->file = $file;
+		
 		if (is_file($file) == false){
 			return false;
 		}
@@ -37,7 +39,6 @@ class Config {
 		}
 
 		$this->data = $data;
-		$this->file = $file;
 
 		return true;
 	}
@@ -52,7 +53,8 @@ class Config {
 	}
 
 	public function save(){
-
+		$text = json_encode($this->data, JSON_PRETTY_PRINT |  JSON_UNESCAPED_SLASHES);
+		file_put_contents($this->file, $text);
 	}
 }
 
