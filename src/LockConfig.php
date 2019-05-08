@@ -20,7 +20,12 @@ namespace Pdr\Ppm;
 class LockConfig extends \Pdr\Ppm\Config {
 
 	public function __construct() {
+	
 		parent::__construct();
+		
+		// default configuration
+		$this->data = new \stdClass;
+		$this->data->packages = array();
 	}
 
 	public function open(\Pdr\Ppm\Package $package){
@@ -51,5 +56,14 @@ class LockConfig extends \Pdr\Ppm\Config {
 
 		return $packageData->source->reference;
 	}
+	
+	public function addPackage(\Pdr\Ppm\Package $package, $commitHash){
+		$packageLock = new \stdClass;
+		$packageLock->name = $package->name;
+		$packageLock->source = new \stdClass;
+		$packageLock->source->type = 'cvs';
+		$packageLock->source->reference = $commitHash;
+		$this->data->packages[] = $packageLock;
+	}	
 }
 
