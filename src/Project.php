@@ -54,6 +54,10 @@ class Project {
 		return $this->path;
 	}
 
+	public function getRealPath() {
+		return realpath($this->path);
+	}
+
 	public function getVendorDir(){
 		$vendorDir = $this->path.'/vendor';
 		$vendorDir = preg_replace("/^\.\//", '', $vendorDir);
