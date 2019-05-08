@@ -183,10 +183,9 @@ class Controller extends \Pdr\Ppm\Command {
 				\Logger::error("Change exist on package {$package->name}");
 			}
 
-			$composerLock = new \ComposerLock;
-			$composerLock->open();
-			$packageLockFound = false;
+			$composerLock = $project->getLockConfig();
 
+			$packageLockFound = false;
 			foreach ($composerLock->data->packages as $packageLock){
 				if ($packageLock->name == $package->name){
 					$packageLockFound = true;
@@ -200,7 +199,7 @@ class Controller extends \Pdr\Ppm\Command {
 
 			if ($packageLockFound == false){
 				$repositoryCurrentCommit = $repository->getCommitHash('HEAD');
-				$composerLock->addPackage($package->name, $repositoryCurrentCommit);
+				$composerLock->addPackage($package, $repositoryCurrentCommit);
 			}
 
 			$composerLock->save();
@@ -383,7 +382,7 @@ class Controller extends \Pdr\Ppm\Command {
 		$project = new \Pdr\Ppm\Project;
 		$config = $project->getConfig();
 		$currentDirectory = getcwd();
-		
+
 		if (empty($config->data->scripts)){
 			return false;
 		}
@@ -409,5 +408,30 @@ class Controller extends \Pdr\Ppm\Command {
 
 		\Pdr\Ppm\Logger::debug("Execute scripts done");
 		return true;
+	}
+
+	/**
+	 * Execute command on each package
+	 **/
+
+	public function commandEach($command) {
+
+		$project = new \Pdr\Ppm\Project;
+		$projectRealPath = $project->getRealPath();
+
+		foreach ($project->getPackages() as $package){
+
+			chdir($projectRealPath);
+			if ( ( $repository = $package->getRepository() ) === false ){
+				\Pdr\Ppm\Logger::warn("[".$package->name."] repository not found.");
+				continue;
+			}
+
+			$packagePath = $package->getPath();
+			chdir($packagePath);
+
+			\Pdr\Ppm\Logger::debug("[{$package->name}] > $command");
+			passthru($command);
+		}
 	}
 }
