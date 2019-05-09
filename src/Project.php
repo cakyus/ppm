@@ -107,6 +107,9 @@ class Project {
 		$package = new \Pdr\Ppm\Package;
 		$package->open($this, $packageName, $packageVersion);
 
-		$package->install();
+		if ($package->install() === true){
+			$config = $this->getConfig();
+			$config->data->require->$packageName = $packageVersion;
+		}
 	}
 }
