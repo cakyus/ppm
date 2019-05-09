@@ -71,13 +71,15 @@ class Package {
 		\Pdr\Ppm\Console::exec($gitCommand.' fetch origin '.$this->getVersion());
 
 		\Pdr\Ppm\Console::exec($gitCommand.' checkout origin/'.$this->getVersion(). ' -b '.$this->getVersion());
-		
+
 		// execute scripts post-package-install
 		\Pdr\Ppm\Logger::debug("[{$this->name}] execute post-package-install ..");
-		
+
 		$packageDirectory = $this->getPath();
 		$controller = new \Pdr\Ppm\Controller;
 		$controller->commandExec('post-package-install', $packageDirectory);
+
+		return true;
 	}
 
 	public function getRepositoryUrl() {
@@ -155,4 +157,3 @@ class Package {
 		throw new \Exception("Parse error");
 	}
 }
-
