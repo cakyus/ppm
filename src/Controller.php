@@ -52,6 +52,9 @@ class Controller extends \Pdr\Ppm\Command {
 			$project = new \Pdr\Ppm\Project;
 			$project->addPackage($packageText);
 
+			$config = $project->getConfig();
+			$config->save();
+
 			// generate autoload
 			$this->commandSave();
 
