@@ -27,7 +27,7 @@ class Config {
 	public function load($file){
 
 		$this->file = $file;
-		
+
 		if (is_file($file) == false){
 			return false;
 		}
@@ -39,6 +39,9 @@ class Config {
 		}
 
 		$this->data = $data;
+		if (empty($config->require)) {
+			 $this->data->require = new \stdClass;
+		}
 
 		return true;
 	}
@@ -57,4 +60,3 @@ class Config {
 		file_put_contents($this->file, $text);
 	}
 }
-
