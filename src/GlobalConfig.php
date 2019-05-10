@@ -21,7 +21,7 @@ class GlobalConfig {
 
 	public $data;
 
-	public function open(){
+	public function __construct(){
 
 		$files = array(
 			  $_SERVER['HOME'].'/.composer/config.json'
@@ -51,5 +51,26 @@ class GlobalConfig {
 
 		$this->data = $data;
 		return true;
+	}
+
+	public function open() {
+		\Pdr\Ppm\Logger::deprecated(__METHOD__);
+	}
+
+	public function getRepositoryUrl($packageName) {
+
+		if (	isset($this->data->repositories)
+			&&	is_object($this->data->repositories)
+			){
+			if (array_key_exists($packageName, $this->data->repositories)) {
+				$repository = $this->data->repositories->$packageName;
+				if (isset($repository->url)){
+					return $repository->url;
+				}
+				return false;
+			}
+		}
+
+		return false;
 	}
 }
