@@ -215,29 +215,21 @@ class Controller extends \Pdr\Ppm\Command {
 
 	public function commandList(){
 
-		$config = new \Pdr\Ppm\GlobalConfig;
-		$config->open();
+		$project = new \Pdr\Ppm\Project;
+		$globalConfig = new \Pdr\Ppm\GlobalConfig;
 
-		$repositories = array();
+		$config = $project->getConfig();
 
-		if (	isset($config->data->repositories)
-			&&	is_object($config->data->repositories)
-			){
-			foreach ($config->data->repositories as $repositoryName => $repository){
-				if ($repositoryName == 'packagist'){
-					continue;
-				}
-				$repositories[$repositoryName] = '';
-				if (isset($repository->url)){
-					$repositories[$repositoryName] = $repository->url;
-				}
-			}
+		if (is_null($config->data->require)) {
+			 return false;
 		}
 
-		// print result
-
-		foreach ($repositories as $repositoryName => $repositoryUrl){
-			echo $repositoryName.' '.$repositoryUrl."\n";
+		foreach ($config->data->require as $packageName => $packageVersion) {
+			 echo $packageName.' '.$packageVersion;
+			 if ( ( $packageUrl = $globalConfig->getRepositoryUrl($packageName) ) !== false ) {
+					echo ' '.$packageUrl;
+			 }
+			 echo "\n";
 		}
 	}
 
