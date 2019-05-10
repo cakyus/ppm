@@ -220,7 +220,7 @@ class Controller extends \Pdr\Ppm\Command {
 
 		$config = $project->getConfig();
 
-		if (is_null($config->data->require)) {
+		if (empty($config->data->require)) {
 			 return false;
 		}
 
