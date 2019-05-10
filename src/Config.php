@@ -32,16 +32,15 @@ class Config {
 			return false;
 		}
 
+
 		$text = file_get_contents($file);
 		$data = json_decode($text);
+
 		if (json_last_error()){
 			\Pdr\Ppm\Logger::error("JSON parse error on file $file. ".json_last_error_msg());
 		}
 
 		$this->data = $data;
-		if (empty($config->require)) {
-			 $this->data->require = new \stdClass;
-		}
 
 		return true;
 	}
