@@ -175,6 +175,7 @@ class Controller extends \Pdr\Ppm\Command {
 	public function commandLock(){
 
 		$project = new \Pdr\Ppm\Project;
+		$composerLock = $project->getLockConfig();
 
 		foreach ($project->getPackages() as $package){
 
@@ -183,10 +184,8 @@ class Controller extends \Pdr\Ppm\Command {
 			}
 
 			if ($repository->hasChanges()){
-				\Logger::error("Change exist on package {$package->name}");
+				\Pdr\Ppm\Logger::error("Change exist on package {$package->name}");
 			}
-
-			$composerLock = $project->getLockConfig();
 
 			$packageLockFound = false;
 			foreach ($composerLock->data->packages as $packageLock){
@@ -205,8 +204,9 @@ class Controller extends \Pdr\Ppm\Command {
 				$composerLock->addPackage($package, $repositoryCurrentCommit);
 			}
 
-			$composerLock->save();
 		}
+
+		$composerLock->save();
 	}
 
 	/**
