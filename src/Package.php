@@ -68,7 +68,7 @@ class Package {
 		\Pdr\Ppm\Console::exec($gitCommand.' remote add composer '.$repositoryUrl);
 		\Pdr\Ppm\Console::exec($gitCommand.' remote add origin '.$repositoryUrl);
 
-		\Pdr\Ppm\Console::exec($gitCommand.' fetch origin '.$this->getVersion());
+		\Pdr\Ppm\Console::exec($gitCommand.' fetch --depth=1 origin '.$this->getVersion());
 
 		\Pdr\Ppm\Console::exec($gitCommand.' checkout origin/'.$this->getVersion(). ' -b '.$this->getVersion());
 
