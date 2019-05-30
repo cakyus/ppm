@@ -429,4 +429,166 @@ class Controller extends \Pdr\Ppm\Command {
 			passthru($command);
 		}
 	}
+
+	/**
+	 * find className
+	 **/
+
+	public function commandFind($findClassName, $findMethodName=null) {
+
+		// load autoload.php
+		$workDir = getcwd();
+
+		if (is_file('vendor/autoload.php') == false) {
+			fwrite(STDERR, "File is not found: 'vendor/autoload.php'");
+			return false;
+		}
+
+		include_once('vendor/autoload.php');
+
+		// find source directories
+
+		$sourceDir = array();
+
+		if (is_file('composer.json') == false) {
+			fwrite(STDERR, "File is not found: 'composer.json'");
+			return false;
+		}
+
+		$composerFile = glob('vendor/*/*/composer.json');
+		$composerFile[] = 'composer.json';
+
+		foreach ($composerFile as $composerFileItem) {
+
+			$composer = json_decode ( file_get_contents($composerFileItem) );
+			$composerDirItem = dirname($composerFileItem);
+
+			if (empty($composer)) {
+				fwrite(STDERR, "Parse failed: 'composer.json'");
+				return false;
+			}
+
+			if (empty($composer->autoload) == false) {
+				foreach ($composer->autoload as $autoloadType => $autoload) {
+					foreach ($autoload as $namespaceName => $sourceDir) {
+						$sourceDirs[] = rtrim($composerDirItem.'/'.$sourceDir, '/');
+					}
+				}
+			}
+		}
+
+		if (empty($sourceDirs)) {
+			fwrite(STDERR, "Search directories are not found");
+			return false;
+		}
+
+		// find source files
+
+		$sourceFiles = array();
+
+		while (true) {
+
+			if (empty($sourceDirs)) {
+				break;
+			}
+
+			$sourceDir = current($sourceDirs);
+
+			if (is_dir($sourceDir) == false) {
+				array_shift($sourceDirs);
+				continue;
+			}
+			$dh = opendir($sourceDir);
+			while ( ( $file = readdir($dh) ) !== false) {
+
+				if ($file == '.' || $file == '..') {
+					continue;
+				}
+
+				$filePath = $sourceDir.'/'.$file;
+
+				if (is_dir($filePath)) {
+					$sourceDirs[] = $filePath;
+				} elseif (is_file($filePath) && substr($filePath, -4) == '.php'){
+					$sourceFiles[] = $filePath;
+				}
+			}
+			closedir($dh);
+
+			array_shift($sourceDirs);
+		}
+
+		// find source class names
+
+		$classNames = get_declared_classes();
+
+		foreach ($sourceFiles as $filePath) {
+			require_once($filePath);
+		}
+
+		$classNames = array_diff(get_declared_classes(), $classNames);
+
+		// find class name
+
+		$patternClass = str_replace('\\', '\\\\', $findClassName).'[;\s\(]';
+
+		foreach ($classNames as $className) {
+
+			$class = new \ReflectionClass($className);
+			$classFile = $class->getFileName();
+			if (empty($classFile)) {
+				continue;
+			}
+			$classLine = file($classFile, FILE_IGNORE_NEW_LINES);
+			$classFilePrint = substr($classFile, strlen($workDir) + 1);
+
+			foreach ($class->getMethods() as $method) {
+
+				$lineStart = $method->getStartLine();
+				$lineStop = $method->getEndLine();
+
+				$methodName = $method->getName();
+				$methodLine = array_slice($classLine, $lineStart - 1, $lineStop - $lineStart + 1);
+
+				// find method
+
+				$patternClassVar = null;
+
+				if (is_null($findMethodName) == false) {
+
+					foreach ($methodLine as $methodLineIndex => $methodLineItem) {
+
+						if (is_null($patternClassVar)) {
+							if (preg_match("/\\\$([^\s\=]+)\s*=\s*new\s+\\\\$patternClass/", $methodLineItem, $match)) {
+								$patternClassVar = "\\\$".$match[1];
+							}
+						}
+
+						if (is_null($patternClassVar)) {
+							continue;
+						}
+
+						if (preg_match("/$patternClassVar\->$findMethodName/", $methodLineItem, $match)) {
+							echo $classFilePrint.' '.( $lineStart + $methodLineIndex ).' '.$className.'::'.$methodName."\n";
+							echo '  '.trim($methodLineItem)."\n";
+							break;
+						}
+					}
+				} else {
+
+				// find class
+
+					foreach ($methodLine as $methodLineIndex => $methodLineItem) {
+						if (preg_match("/(\\\$[^\s\=]+)\s*=\s*new\s+\\\\$patternClass/", $methodLineItem, $match)) {
+							echo $classFilePrint.' '.( $lineStart + $methodLineIndex ).' '.$className.'::'.$methodName."\n";
+							echo '  '.trim($methodLineItem)."\n";
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		return false;
+	}
 }
