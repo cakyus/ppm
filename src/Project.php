@@ -68,14 +68,12 @@ class Project {
 
 		$packages = array();
 
-		if (empty($this->config->data->require)) {
-			return $packages;
-		}
-
-		foreach ($this->config->data->require as $packageName => $packageVersion){
-			$package = new \Pdr\Ppm\Package;
-			$package->open($this, $packageName, $packageVersion);
-			$packages[$packageName] = $package;
+		foreach (array('require', 'require-dev') as $propertyName) {
+			foreach ($this->config->data->$propertyName as $packageName => $packageVersion){
+				$package = new \Pdr\Ppm\Package;
+				$package->open($this, $packageName, $packageVersion);
+				$packages[$packageName] = $package;
+			}
 		}
 
 		return $packages;
