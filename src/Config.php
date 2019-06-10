@@ -42,7 +42,10 @@ class Config {
 
 		$this->data = $data;
 
-		foreach (array('require', 'require-dev') as $propertyName) {
+		foreach (array(
+			  'require', 'require-dev'
+			, 'autoload', 'autoload-dev'
+			) as $propertyName) {
 			if (property_exists($this->data, $propertyName) == false) {
 				$this->data->$propertyName = new \stdClass;
 			}
