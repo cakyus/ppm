@@ -30,6 +30,41 @@ class Package {
 		$this->version = $version;
 	}
 
+	public function create($packageName, $packageVersion, $packagePath) {
+
+		$config = new \Pdr\Ppm\GlobalConfig;
+
+		if (is_dir($packagePath) == true) {
+			throw new \Exception("packagePath is exists");
+		}
+
+		$repositoryUrl = $config->getRepositoryUrl($packageName);
+
+		$command = 'git init '.escapeshellarg($packagePath);
+		\Pdr\Ppm\Console::exec($command);
+
+		$gitCommand = 'git'
+			.' --git-dir '.$packagePath.'/.git'
+			.' --work-tree '.$packagePath
+			;
+
+		$command = $gitCommand.' remote add origin '.escapeshellarg($repositoryUrl);
+		\Pdr\Ppm\Console::exec($command);
+
+		$command = $gitCommand.' fetch --depth=1 origin '.$packageVersion;
+		\Pdr\Ppm\Console::exec($command);
+
+		$command = $gitCommand.' checkout origin/'.$packageVersion.' -b '.$packageVersion;
+		\Pdr\Ppm\Console::exec($command);
+
+		// Execute install command
+
+		chdir($packagePath);
+
+		$controller = new \Pdr\Ppm\Controller;
+		$controller->commandInstall();
+	}
+
 	public function install() {
 
 		if (	is_dir($this->project->getVendorDir().'/'.$this->name)
@@ -141,7 +176,42 @@ class Package {
 			return $match[1];
 		}
 
-		throw new \Exception("Parse error");
+		if ($this->name == 'php') {
+			return phpversion();
+		}
+
+		// tags , eg. "3.*"
+
+		// 1. find remote repository url
+
+		$globalConfig = new \Pdr\Ppm\GlobalConfig;
+		$repositoryUrl = $globalConfig->getRepositoryUrl($this->name);
+
+		if (empty($repositoryUrl)) {
+			throw new \Exception("repositoryUrl is not found. ".$this->name);
+		}
+
+		// 2. find tags
+
+		$command = 'git ls-remote --tags '.$repositoryUrl.' '.$this->version;
+		$line = \Pdr\Ppm\Console::line($command);
+
+		if (count($line) == 0) {
+			throw new \Exception("Version is not found, $command");
+		}
+
+		$versions = array();
+		foreach ($line as $lineItem) {
+			if (preg_match("/^([a-f0-9]+)\s([^\s]+)$/", $lineItem, $match)) {
+				$versions[$match[1]] = basename($match[2]);
+			}
+		}
+
+		usort($versions, 'version_compare');
+
+		$version = end($versions);
+
+		return $version;
 	}
 
 	/**
@@ -152,8 +222,8 @@ class Package {
 
 		if (preg_match("/^dev\-(.+)/", $this->version, $match)){
 			return 'branch';
+		} else {
+			return 'tag';
 		}
-
-		throw new \Exception("Parse error");
 	}
 }

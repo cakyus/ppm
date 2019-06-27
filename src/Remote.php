@@ -51,9 +51,20 @@ class Remote {
 	public function getCommit($commitReference) {
 
 		$gitDir = $this->repository->getGitDir();
-		$file = $gitDir.'/refs/remotes/'.$this->name.'/'.$commitReference;
 
-		if (is_file($file) == false) {
+		$fileFound = false;
+		foreach ( array(
+			  $gitDir.'/refs/remotes/'.$this->name.'/'.$commitReference
+			, $gitDir.'/refs/tags/'.$commitReference
+			) as $file ) {
+			if (is_file($file) == false) {
+				continue;
+			}
+			$fileFound = true;
+			break;
+		}
+
+		if ($fileFound == false){
 			return false;
 		}
 
