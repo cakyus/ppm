@@ -213,22 +213,19 @@ class Controller extends \Pdr\Ppm\Command {
 			}
 
 			if ( ( $repository = $package->getRepository() ) == false ){
-				throw new \Exception("Package not installed : ".$package->name);
+				throw new \Exception("package {$package->name} not installed");
 			}
 
 			if ($repository->hasChanges()){
-				\Pdr\Ppm\Logger::error("Change exist on package {$package->name}");
+				throw new \Exception("package {$package->name} has changes");
 			}
 
 			$packageLockFound = false;
 			foreach ($composerLock->data->packages as $packageLock){
 				if ($packageLock->name == $package->name){
-					echo $packageLock->name."\n";
 					$packageLockFound = true;
 					$repositoryCurrentCommit = $repository->getCommitHash('HEAD');
-					echo $repositoryCurrentCommit."\n";
 					if ($packageLock->source->reference != $repositoryCurrentCommit){
-						\Logger::debug("Update ".$package->name);
 						$packageLock->source->reference = $repositoryCurrentCommit;
 					}
 				}
@@ -238,8 +235,25 @@ class Controller extends \Pdr\Ppm\Command {
 				$repositoryCurrentCommit = $repository->getCommitHash('HEAD');
 				$composerLock->addPackage($package, $repositoryCurrentCommit);
 			}
-
 		}
+
+
+		foreach ($composerLock->data->packages as $packageIndex => $packageLock){
+
+			$packageFound = false;
+			foreach ($project->getPackages() as $package){
+				if ($packageLock->name == $package->name){
+					$packageFound = true;
+					break;
+				}
+			}
+
+			if ($packageFound == false) {
+				unset($composerLock->data->packages[$packageIndex]);
+			}
+		}
+
+		$composerLock->data->packages = array_values( $composerLock->data->packages );
 
 		$composerLock->save();
 	}
