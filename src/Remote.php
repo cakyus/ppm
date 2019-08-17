@@ -30,6 +30,20 @@ class Remote {
 
 	public function getBranches() {
 
+		$command = $this->repository->getGitCommand()
+			.' for-each-ref --format "%(refname:short)" refs/remotes/'.$this->name
+			;
+		$branchNames = \Pdr\Ppm\Console::line($command);
+
+		$branches = array();
+		foreach ($branchNames as $branchName){
+			$branch = new \Pdr\Ppm\Branch;
+			$branch->name = basename($branchName);
+			$branch->open($this->repository, $branchName);
+			$branches[] = $branch;
+		}
+
+		return $branches;
 	}
 
 	public function getBranch($branchName) {
@@ -102,4 +116,3 @@ class Remote {
 		\Pdr\Ppm\Console::exec($command);
 	}
 }
-

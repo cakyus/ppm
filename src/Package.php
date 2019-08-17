@@ -73,6 +73,11 @@ class Package {
 			return true;
 		}
 
+		if (preg_match("/^ext\-(.+)$/", $this->name, $match)) {
+			trigger_error("SKIP check installed extension ".$match[1], E_USER_NOTICE);
+			return TRUE;
+		}
+
 		$repositoryPath = $this->project->getVendorDir().'/'.$this->name;
 		$repositoryDir  = dirname($repositoryPath);
 
@@ -91,7 +96,7 @@ class Package {
 		$repositoryUrl = $this->getRepositoryUrl();
 
 		if (empty($repositoryUrl)){
-			\Pdr\Ppm\Logger::error("Repository does not exists: {$this->name}");
+			throw new \Exception("Repository does not exists: {$this->name}");
 		}
 
 		$gitCommand = 'git'

@@ -61,7 +61,7 @@ class Controller extends \Pdr\Ppm\Command {
 			}
 
 			// generate autoload
-			$this->commandSave();
+			$this->commandAutoload();
 
 			// execute post install command
 			$this->commandExec('post-install-cmd');
@@ -217,8 +217,10 @@ class Controller extends \Pdr\Ppm\Command {
 			$packageLockFound = false;
 			foreach ($composerLock->data->packages as $packageLock){
 				if ($packageLock->name == $package->name){
+					echo $packageLock->name."\n";
 					$packageLockFound = true;
 					$repositoryCurrentCommit = $repository->getCommitHash('HEAD');
+					echo $repositoryCurrentCommit."\n";
 					if ($packageLock->source->reference != $repositoryCurrentCommit){
 						\Logger::debug("Update ".$package->name);
 						$packageLock->source->reference = $repositoryCurrentCommit;
@@ -261,10 +263,10 @@ class Controller extends \Pdr\Ppm\Command {
 	}
 
 	/**
-	 * Save autoload
+	 * Generate autoload file
 	 **/
 
-	public function commandSave(){
+	public function commandAutoload(){
 
 		$project = new \Pdr\Ppm\Project;
 
@@ -628,4 +630,51 @@ class Controller extends \Pdr\Ppm\Command {
 
 		return false;
 	}
+
+	/**
+	 * List the same file from all branches
+	 **/
+
+	public function commandLs($fileName) {
+
+		$project = new \Pdr\Ppm\Project;
+		$repository = $project->getRepository();
+
+		// local branches
+
+		$data = array();
+
+		foreach ($repository->getBranches() as $branch){
+
+			$command = $repository->getGitCommand()
+				.' ls-tree '.escapeshellarg($branch->name).' '.escapeshellarg($fileName)
+				;
+			if (\Pdr\Ppm\Console::line($command)){
+				$data[$branch->name] = date('Y-m-d H:i:s', $branch->getFormat('%ct'));
+			}
+		}
+
+		// remote branches
+
+		foreach ($repository->getRemotes() as $remote){
+
+			foreach ($remote->getBranches() as $branch){
+
+				$command = $repository->getGitCommand()
+					.' ls-tree '.escapeshellarg($remote->name).'/'.escapeshellarg($branch->name)
+					.' '.escapeshellarg($fileName)
+					;
+				if (\Pdr\Ppm\Console::line($command)){
+					$data[$remote->name.'/'.$branch->name] = date('Y-m-d H:i:s', $branch->getFormat('%ct'));
+				}
+			}
+		}
+
+		// print result
+		asort($data);
+		foreach ($data as $dataIndex => $item){
+			echo $item.' '.$dataIndex."\n";
+		}
+	}
+
 }

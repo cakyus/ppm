@@ -110,4 +110,18 @@ class Project {
 			$config->data->require->$packageName = $packageVersion;
 		}
 	}
+
+	/**
+	 * Get project repository
+	 *
+	 * @return \Pdr\Ppm\Repository
+	 * @throw \Exception
+	 **/
+
+	public function getRepository() {
+		$repository = new \Pdr\Ppm\Repository;
+		$repository->open($this->path.'/.git', $this->path);
+		return $repository;
+	}
+
 }

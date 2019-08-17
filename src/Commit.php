@@ -19,13 +19,17 @@ namespace Pdr\Ppm;
 
 class Commit {
 
+	public $repository;
 	public $commitHash;
+
+	public function __construct() {}
 
 	public function open(\Pdr\Ppm\Repository $repository, $commitReference){
 
 		// TODO check if $commitReference is a commitHash
 
-		$command  = $repository->getGitCommand();
+		$this->repository = $repository;
+		$command  = $this->repository->getGitCommand();
 		$command .= " log --format='%H' -n 1 $commitReference";
 
 		$commitHash = \Pdr\Ppm\Console::text($command);
@@ -36,5 +40,11 @@ class Commit {
 		$this->commitHash = $commitHash;
 
 		return true;
+	}
+
+	public function getFormat($formatText) {
+		$command  = $this->repository->getGitCommand();
+		$command .= " log --format=".escapeshellarg($formatText)." -n 1 ".$this->commitHash;
+		return \Pdr\Ppm\Console::text($command);
 	}
 }

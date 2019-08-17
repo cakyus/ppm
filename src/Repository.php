@@ -41,6 +41,10 @@ class Repository {
 		return $command;
 	}
 
+	/**
+	 * @return array Collection of \Pdr\Ppm\Remote
+	 **/
+
 	public function getRemotes() {
 
 		$remotes = array();
@@ -117,5 +121,23 @@ class Repository {
 			return true; // Has local changes
 		}
 	}
-}
 
+	public function getBranches() {
+
+		$command = $this->getGitCommand()
+			.' for-each-ref --format "%(refname:short)" refs/heads'
+			;
+		$branchNames = \Pdr\Ppm\Console::line($command);
+
+		$branches = array();
+		foreach ($branchNames as $branchName){
+			$branch = new \Pdr\Ppm\Branch;
+			$branch->name = $branchName;
+			$branch->open($this, $branchName);
+			$branches[] = $branch;
+		}
+
+		return $branches;
+	}
+
+}
