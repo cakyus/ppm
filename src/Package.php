@@ -65,7 +65,7 @@ class Package {
 		$controller->commandInstall();
 	}
 
-	public function install() {
+	public function install($commitHash=null) {
 
 		if (	is_dir($this->project->getVendorDir().'/'.$this->name)
 			&&	is_dir($this->project->getVendorDir().'/'.$this->name.'/.git')
@@ -108,11 +108,16 @@ class Package {
 		\Pdr\Ppm\Console::exec($gitCommand.' remote add composer '.$repositoryUrl);
 		\Pdr\Ppm\Console::exec($gitCommand.' remote add origin '.$repositoryUrl);
 
-		\Pdr\Ppm\Console::exec($gitCommand.' fetch --depth=1 origin '.$this->getVersion());
-
-		\Pdr\Ppm\Console::exec($gitCommand.' checkout origin/'.$this->getVersion(). ' -b '.$this->getVersion());
+		if (is_null($commitHash) == false) {
+			\Pdr\Ppm\Console::exec($gitCommand.' fetch origin '.$this->getVersion());
+			\Pdr\Ppm\Console::exec($gitCommand.' checkout '.$commitHash.' -b '.$this->getVersion());
+		} else {
+			\Pdr\Ppm\Console::exec($gitCommand.' fetch --depth=1 origin '.$this->getVersion());
+			\Pdr\Ppm\Console::exec($gitCommand.' checkout origin/'.$this->getVersion(). ' -b '.$this->getVersion());
+		}
 
 		// execute scripts post-package-install
+
 		\Pdr\Ppm\Logger::debug("[{$this->name}] execute post-package-install ..");
 
 		$packageDirectory = $this->getPath();
@@ -202,7 +207,7 @@ class Package {
 		$line = \Pdr\Ppm\Console::line($command);
 
 		if (count($line) == 0) {
-			throw new \Exception("Version is not found, $command");
+			throw new \Exception("version not found, $command");
 		}
 
 		$versions = array();
