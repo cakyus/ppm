@@ -59,7 +59,7 @@ class Controller extends \Pdr\Ppm\Command {
 			$lockConfig = $project->getLockConfig();
 
 			foreach ($project->getPackages() as $package){
-				if ($packageData = $lockConfig->getPackage($package->name)) {
+				if ($lockConfig && $packageData = $lockConfig->getPackage($package->name)) {
 					$package->install( $packageData->source->reference );
 				} else {
 					$package->install();
