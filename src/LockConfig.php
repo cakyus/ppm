@@ -65,5 +65,17 @@ class LockConfig extends \Pdr\Ppm\Config {
 		$packageLock->source->reference = $commitHash;
 		$this->data->packages[] = $packageLock;
 	}
+
+	public function save() {
+
+		foreach (array(
+				'require','require-dev'
+			, 'autoload', 'autoload-dev'
+			) as $propertyName) {
+			unset($this->data->$propertyName);
+		}
+
+		parent::save();
+	}
 }
 
