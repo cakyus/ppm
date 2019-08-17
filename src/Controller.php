@@ -56,8 +56,14 @@ class Controller extends \Pdr\Ppm\Command {
 		if (is_null($packageText)){
 
 			$project = new \Pdr\Ppm\Project;
+			$lockConfig = $project->getLockConfig();
+
 			foreach ($project->getPackages() as $package){
-				$package->install();
+				if ($packageData = $lockConfig->getPackage($package->name)) {
+					$package->install( $packageData->source->reference );
+				} else {
+					$package->install();
+				}
 			}
 
 			// generate autoload
