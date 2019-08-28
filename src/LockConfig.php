@@ -20,12 +20,21 @@ namespace Pdr\Ppm;
 class LockConfig extends \Pdr\Ppm\Config {
 
 	public function __construct() {
-
 		parent::__construct();
+		$this->initialize();
+	}
 
-		// default configuration
+	protected function initialize() {
 		$this->data = new \stdClass;
 		$this->data->packages = array();
+	}
+
+	public function load($file) {
+		$result = parent::load($file);
+		if (empty($result)) {
+			$this->initialize();
+		}
+		return $result;
 	}
 
 	public function open(\Pdr\Ppm\Package $package){
