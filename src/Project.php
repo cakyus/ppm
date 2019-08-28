@@ -45,11 +45,8 @@ class Project {
 	public function getLockConfig() {
 		$file = $this->getPath().'/composer.lock';
 		$lockConfig = new \Pdr\Ppm\LockConfig;
-		$loadResult = $lockConfig->load($file);
-		if ($loadResult) {
-			return $lockConfig;
-		}
-		return FALSE;
+		$lockConfig->load($file);
+		return $lockConfig;
 	}
 
 
