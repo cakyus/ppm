@@ -23,23 +23,20 @@ class GlobalConfig {
 
 	public function __construct(){
 
-		$files = array(
-			  $_SERVER['HOME'].'/.composer/config.json'
-			, $_SERVER['HOME'].'/.config/composer/config.json'
-		);
-
-		$fileFound = false;
 		$filePath = null;
-		foreach ($files as $file){
-			if (is_file($file) == false){
-				continue;
-			}
-			$fileFound = true;
-			$filePath = $file;
-			break;
+
+		if (is_file($_SERVER['HOME'].'/.composer/config.json')){
+			$filePath = $_SERVER['HOME'].'/.composer/config.json';
+		} elseif (is_file($_SERVER['HOME'].'/.config/composer/config.json')){
+			$filePath = $_SERVER['HOME'].'/.config/composer/config.json';
+		} elseif (
+					isset($_SERVER['APPDATA'])
+			&&	is_file($_SERVER['APPDATA'].'/Composer/config.json')
+			){
+			$filePath = $_SERVER['APPDATA'].'/Composer/config.json';
 		}
 
-		if (empty($fileFound)){
+		if (is_null($filePath)){
 			\Pdr\Ppm\Logger::warn("Global composer config file is not found");
 			return false;
 		}
