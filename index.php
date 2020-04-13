@@ -1,4 +1,7 @@
+#!/usr/bin/env php
 <?php
+
+define('FCPATH', dirname(__FILE__));
 
 date_default_timezone_set('Asia/Jakarta');
 
