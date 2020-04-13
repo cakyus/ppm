@@ -53,53 +53,6 @@ class Command {
 	 **/
 
 	public function commandHelp() {
-
-		$class = new \ReflectionClass($this);
-
-		$comment = $class->getDocComment();
-		$comment = preg_replace("/^\/\*+/", "", $comment);
-		$comment = preg_replace("/\*+\/$/", "", $comment);
-		$commentLines = array();
-		foreach (explode("\n", $comment) as $commentLine){
-			$commentLine = preg_replace("/^\s+\*+/", "", $commentLine);
-			$commentLines[] = $commentLine;
-		}
-		$comment = implode("\n", $commentLines);
-		$comment = trim($comment);
-
-		if (is_null($this->version) == false){
-			$comment .= ' - version '.$this->version;
-		}
-		echo $comment."\n";
-
-		echo "Commands:\n";
-
-		foreach ($class->getMethods(\ReflectionMethod::IS_PUBLIC) as $method){
-
-			if (substr($method->getName(),0,2) == '__'){
-				continue;
-			}
-
-			if (preg_match("/^command([A-Za-z]+)/",$method->getName(),$match) == false){
-				continue;
-			}
-
-			$commandName = lcfirst($match[1]);
-			$comment = $method->getDocComment();
-
-			$comment = preg_replace("/^\/\*+/", "", $comment);
-			$comment = preg_replace("/\*+\/$/", "", $comment);
-
-			$commentLines = array();
-			foreach (explode("\n", $comment) as $commentLine){
-				$commentLine = preg_replace("/^\s+\*+/", "", $commentLine);
-				$commentLines[] = $commentLine;
-			}
-			$comment = implode("\n", $commentLines);
-			$comment = trim($comment);
-
-			echo "  $commandName - $comment\n";
-		}
+		fwrite(STDERR, file_get_contents(FCPATH.'/docs/ppm.txt'));
 	}
 }
-
