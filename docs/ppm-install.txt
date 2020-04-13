@@ -1,0 +1,15 @@
+Install packages
+
+Usage
+
+  ppm install [<packageName>:<packageVersion>]
+
+Examples
+
+  Install CodeIgniter at branch "3.1-stable"
+
+    ppm install codeigniter/framework:dev-3.1-stable
+
+  Install all packages defined in composer.json
+
+    ppm install
