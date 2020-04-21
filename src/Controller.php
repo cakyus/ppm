@@ -21,11 +21,31 @@ namespace Pdr\Ppm;
  * PHP Package Manager
  **/
 
-class Controller extends \Pdr\Ppm\Command {
+class Controller {
 
 	public function __construct() {
-		parent::__construct();
-		$this->version = '1.0';
+
+		if (PHP_SAPI !== 'cli'){
+			throw new \Exception("Invalid SAPI");
+		}
+
+		if ($_SERVER['argc'] == 1){
+			$this->commandHelp();
+			exit(0);
+		}
+
+		$arguments = $_SERVER['argv'];
+		array_shift($arguments);
+		$commandName = array_shift($arguments);
+		$commandName = 'command'.ucfirst($commandName);
+
+		if (method_exists($this, $commandName) == false){
+			fwrite(STDERR, "ERROR: Command not exists\n");
+			$this->commandHelp();
+			exit(1);
+		}
+
+		call_user_func_array(array($this, $commandName), $arguments);
 	}
 
 	/**
@@ -697,4 +717,11 @@ class Controller extends \Pdr\Ppm\Command {
 		}
 	}
 
+	/**
+	 * Print this information and exit
+	 **/
+
+	public function commandHelp() {
+		fwrite(STDERR, file_get_contents(FCPATH.'/docs/ppm.txt'));
+	}
 }
