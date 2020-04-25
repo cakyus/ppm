@@ -6,10 +6,14 @@ Usage
 
 Examples
 
+  Install all packages defined in composer.json
+
+    ppm install
+
   Install CodeIgniter at branch "3.1-stable"
 
     ppm install codeigniter/framework:dev-3.1-stable
 
-  Install all packages defined in composer.json
+  Install CodeIgniter at branch "3.1-stable" using repository path
 
-    ppm install
+    ppm install codeigniter/framework:dev-3.1-stable https://github.com/bcit-ci/CodeIgniter
