@@ -28,6 +28,9 @@ class Controller {
 		if (PHP_SAPI !== 'cli'){
 			throw new \Exception("Invalid SAPI");
 		}
+	}
+
+	public function execute() {
 
 		if ($_SERVER['argc'] == 1){
 			$this->commandHelp();
