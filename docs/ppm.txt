@@ -13,4 +13,5 @@ Basic Commands
   install  Install packages
   remove   Remove packages
   upgrade  Upgrade the system by installing or upgrading packages
+  config   Configuration management
   help     Show this information and exit

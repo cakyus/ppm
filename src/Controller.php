@@ -21,7 +21,7 @@ namespace Pdr\Ppm;
  * PHP Package Manager
  **/
 
-class Controller {
+class Controller extends \Pdr\Ppm\Cli\Controller {
 
 	public function __construct() {
 
@@ -74,9 +74,11 @@ class Controller {
 	 * Install package
 	 **/
 
-	public function commandInstall($packageText=null){
+	public function commandInstall(){
 
-		if (is_null($packageText)){
+		$option = new \Pdr\Ppm\Cli\Option;
+
+		if ($option->getCommandCount() == 0){
 
 			$project = new \Pdr\Ppm\Project;
 			$lockConfig = $project->getLockConfig();
@@ -95,7 +97,9 @@ class Controller {
 			// execute post install command
 			$this->commandExec('post-install-cmd');
 
-		} else {
+		} elseif ($option->getCommandCount() == 1) {
+
+			$packageText = $option->getCommand(0);
 
 			$project = new \Pdr\Ppm\Project;
 			$project->addPackage($packageText);
@@ -106,6 +110,16 @@ class Controller {
 			// generate autoload
 			$this->commandSave();
 
+		} elseif ($option->getCommandCount() == 2) {
+
+			$packageText = $option->getCommand(0);
+			$repositoryPath = $option->getCommand(1);
+
+			trigger_error("packageText: $packageText", E_USER_NOTICE);
+			trigger_error("repositoryPath: $repositoryPath", E_USER_NOTICE);
+		} else {
+			trigger_error("Invalid number of arguments. ".$option->getCommandCount(), E_USER_WARNING);
+			return FALSE;
 		}
 	}
 
@@ -718,6 +732,21 @@ class Controller {
 		foreach ($data as $dataIndex => $item){
 			echo $item.' '.$dataIndex."\n";
 		}
+	}
+
+	public function commandConfig(){
+
+		$this->shiftCommand();
+
+		$controller = new \Pdr\Ppm\Controller\Config;
+		$option = new \Pdr\Ppm\Cli\Option;
+
+		if ($option->getCommandCount() == 0){
+			$_SERVER['argc']++;
+			$_SERVER['argv'][] = 'index';
+		}
+
+		$controller->execute();
 	}
 
 	/**

@@ -21,6 +21,36 @@ namespace Pdr\Ppm;
  * Merge ComposerGlobalConfig and ComposerLocalConfig
  **/
 
-class ComposerConfig {
+class ComposerConfig extends \Pdr\Ppm\Element {
 
+	protected $_filePath;
+
+	public function __construct(){
+		parent::__construct();
+	}
+
+	public function open($filePath=NULL){
+
+		if (is_null($filePath)){
+			foreach (array(
+				$_SERVER['HOME'].'/.config/composer/config.json'
+				) as $configPath){
+				trigger_error("Check $configPath", E_USER_NOTICE);
+				if (is_file($configPath)){
+					$filePath = $configPath;
+					break;
+				}
+			}
+		}
+
+		if (is_null($filePath)){
+			throw new \Exception("filePath is not found");
+		}
+
+		$fileText = file_get_contents($filePath);
+		$fileObject = json_decode($fileText, TRUE);
+		$this->_filePath = $filePath;
+
+		return parent::loadObject($fileObject);
+	}
 }
