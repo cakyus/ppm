@@ -20,8 +20,11 @@ namespace Pdr\Ppm;
 class Package {
 
 	public $project;
+
 	public $name;
 	public $version;
+	public $remotePath;
+
 	public $path;
 
 	public function open(\Pdr\Ppm\Project $project, $name, $version) {
@@ -64,6 +67,85 @@ class Package {
 		$controller = new \Pdr\Ppm\Controller;
 		$controller->commandInstall();
 	}
+
+	public function install2(){
+
+		trigger_error("name: ".$this->name, E_USER_NOTICE);
+		trigger_error("version: ".$this->version, E_USER_NOTICE);
+		trigger_error("remotePath: ".$this->remotePath, E_USER_NOTICE);
+
+		$project = new \Pdr\Ppm\Project;
+		$console = new \Pdr\Ppm\Console2;
+
+		// Get localPath
+
+		$localPath = $project->vendorDir.'/'.$this->name;
+
+		trigger_error("localPath: ".$localPath, E_USER_NOTICE);
+
+		// Get git reference
+
+		if (preg_match("/^dev\-(.+)$/", $this->version, $match) == FALSE){
+			throw new \Exception("Invalid version");
+		}
+		$gitReference = $match[1];
+
+		trigger_error("gitReference: ".$gitReference, E_USER_NOTICE);
+
+		// Initialize local repository
+
+		if (is_dir($localPath) == FALSE){
+			$commandText = 'git init '.$localPath;
+			$console->exec($commandText);
+		}
+
+		$gitCommand = 'git'
+			.' --git-dir '.$localPath.'/.git'
+			.' --work-tree '.$localPath
+			;
+
+		// Remove git remote
+
+		$commandText = $gitCommand.' remote';
+		foreach ($console->line($commandText) as $remoteName){
+			if (	$remoteName != 'origin'
+				&&	$remoteName != 'composer'
+				){
+				continue;
+			}
+			$commandText = $gitCommand.' remote rm '.$remoteName;
+			$console->exec($commandText);
+		}
+
+		// Append git remote
+
+		$commandText = $gitCommand.' remote add origin '.$this->remotePath;
+		$console->exec($commandText);
+
+		$commandText = $gitCommand.' remote add composer '.$this->remotePath;
+		$console->exec($commandText);
+
+		$commandText = $gitCommand.' fetch --depth=1 origin '.$gitReference;
+		$console->exec($commandText);
+
+		$commandText = $gitCommand.' checkout '.$gitReference;
+		$console->exec($commandText);
+
+		$commandText = $gitCommand.' branch --set-upstream-to=origin/'.$gitReference;
+		$console->exec($commandText);
+
+		// TODO Update config
+
+		// Update autoload
+
+		$controller = new \Pdr\Ppm\Controller;
+		$controller->commandCreateAutoload();
+		$controller->commandCreateLock();
+	}
+
+	/**
+	 * @deprecated use install2
+	 **/
 
 	public function install($commitHash=null) {
 

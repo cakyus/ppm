@@ -22,6 +22,8 @@ class Project {
 	public $path;
 	public $config;
 
+	public $vendorDir;
+
 	public function __construct() {
 
 		$projectPath = '.';
@@ -36,6 +38,8 @@ class Project {
 
 		$this->config = $config;
 		$this->path = $projectPath;
+
+		$this->vendorDir = 'vendor';
 	}
 
 	public function getConfig(){
