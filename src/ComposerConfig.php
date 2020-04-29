@@ -33,7 +33,8 @@ class ComposerConfig extends \Pdr\Ppm\Element {
 
 		if (is_null($filePath)){
 			foreach (array(
-				$_SERVER['HOME'].'/.config/composer/config.json'
+				  $_SERVER['HOME'].'/.config/composer/config.json'
+				, $_SERVER['HOME'].'/.composer/config.json'
 				) as $configPath){
 				trigger_error("Check $configPath", E_USER_NOTICE);
 				if (is_file($configPath)){
