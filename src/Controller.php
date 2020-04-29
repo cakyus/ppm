@@ -30,6 +30,10 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		}
 	}
 
+	public function commandInit() {
+
+	}
+
 	/**
 	 * Create project
 	 **/
