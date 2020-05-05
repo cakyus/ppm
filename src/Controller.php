@@ -99,24 +99,42 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		} elseif ($option->getCommandCount() == 2) {
 
 			$packageText = $option->getCommand(0);
-			$packageRemotePath = $option->getCommand(1);
+			$packageRepository = $option->getCommand(1);
 
 			if (preg_match("/^([^:]+):(.+)$/", $packageText, $match) == FALSE){
 				throw new \Exception("Invalid packageText");
 			}
 
 			$packageName = $match[1];
-			$packageVersion = $match[2];
+			$packageRevision = $match[2];
 
 			trigger_error("packageName: $packageName", E_USER_NOTICE);
-			trigger_error("packageVersion: $packageVersion", E_USER_NOTICE);
-			trigger_error("packageRemotePath: $packageRemotePath", E_USER_NOTICE);
+			trigger_error("packageRevision: $packageRevision", E_USER_NOTICE);
+			trigger_error("packageRepository: $packageRepository", E_USER_NOTICE);
 
 			$package = new \Pdr\Ppm\Package;
 			$package->name = $packageName;
-			$package->version = $packageVersion;
-			$package->remotePath = $packageRemotePath;
+			$package->revision = $packageRevision;
+			$package->repository = $packageRepository;
 			$package->install2();
+
+			// TODO Update config
+
+			// Update autoload
+
+			$this->commandCreateAutoload();
+
+			$config = new \Pdr\Ppm\Git\Config;
+
+			$config->set('ppm.packages.'.$package->name.'.repository', $package->repository);
+
+			$project = new \Pdr\Ppm\Project;
+			$config = new \Pdr\Ppm\Git\Config;
+
+			$configFile = $project->getPath().'/gitconfig';
+			$config->open($configFile);
+			$config->set('ppm.packages.'.$package->name.'.revision', $package->revision);
+			$config->set('ppm.packages.'.$package->name.'.commit', $package->commit);
 
 		} else {
 			trigger_error("Invalid number of arguments. ".$option->getCommandCount(), E_USER_WARNING);
