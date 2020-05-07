@@ -134,7 +134,12 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			$configFile = $project->getPath().'/gitconfig';
 			$config->open($configFile);
 			$config->set('ppm.packages.'.$package->name.'.revision', $package->revision);
-			$config->set('ppm.packages.'.$package->name.'.commit', $package->commit);
+
+			if (empty($package->commit) == TRUE){
+				$config->del('ppm.packages.'.$package->name.'.commit');
+			} else {
+				$config->set('ppm.packages.'.$package->name.'.commit', $package->commit);
+			}
 
 		} else {
 			trigger_error("Invalid number of arguments. ".$option->getCommandCount(), E_USER_WARNING);
