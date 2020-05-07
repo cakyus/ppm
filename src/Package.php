@@ -120,6 +120,15 @@ class Package {
 		$commandText = $gitCommand.' remote add origin '.$this->repository;
 		$console->exec($commandText);
 
+		// Check remote revision
+
+		$commandText = $gitCommand.' ls-remote origin master';
+		$revisions = $console->line($commandText);
+		if (count($revisions) == 0){
+			fwrite(STDERR, "WARNING revision not exist\n");
+			return FALSE;
+		}
+
 		$commandText = $gitCommand.' fetch --depth=1 origin '.$this->revision;
 		$console->exec($commandText);
 
@@ -132,6 +141,8 @@ class Package {
 		// update commit value
 		$commandText = $gitCommand.' log -n 1 --format=%H';
 		$this->commit = $console->text($commandText);
+
+		return TRUE;
 	}
 
 	/**
