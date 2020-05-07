@@ -29,6 +29,10 @@ class Config {
 		$this->optionFile = '--file '.escapeshellarg($filePath);
 	}
 
+	public function get($configName){
+
+	}
+
 	public function set($configName, $configValue){
 
 		$console = new \Pdr\Ppm\Console2;
