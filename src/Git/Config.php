@@ -19,27 +19,35 @@ namespace Pdr\Ppm\Git;
 
 class Config {
 
-	protected $filePath;
+	protected $optionFile;
+
+	public function __construct(){
+		$this->optionFile = '--global';
+	}
 
 	public function open($filePath) {
-		$this->filePath = $filePath;
+		$this->optionFile = '--file '.escapeshellarg($filePath);
 	}
 
 	public function set($configName, $configValue){
 
 		$console = new \Pdr\Ppm\Console2;
 
-		if (is_null($this->filePath)){
-			$optionFile = '--global';
-		} else {
-			$optionFile = '--file '.escapeshellarg($this->filePath);
-		}
-
-		$gitCommand = 'git config '.$optionFile;
+		$gitCommand = 'git config '.$this->optionFile;
 
 		$commandText = $gitCommand
 			.' --replace-all '.escapeshellarg($configName).' '.escapeshellarg($configValue)
 			;
+
+		$console->exec($commandText);
+	}
+
+	public function del($configName){
+
+		$console = new \Pdr\Ppm\Console2;
+
+		$gitCommand = 'git config '.$this->optionFile;
+		$commandText = $gitCommand.' --unset-all '.escapeshellarg($configName);
 
 		$console->exec($commandText);
 	}
