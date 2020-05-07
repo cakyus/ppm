@@ -51,5 +51,35 @@ class Config {
 
 		$console->exec($commandText);
 	}
+
+	/**
+	 * Get all values for a configuration
+	 *
+	 * @return array
+	 **/
+
+	public function listFetch($configName){
+
+	}
+
+	/**
+	 * Set a value in a configuration
+	 *
+	 * @return boolean
+	 **/
+
+	public function listUpdate($configName, $configValue){
+
+	}
+
+	/**
+	 * Delete a value in a configuration
+	 *
+	 * @return boolean
+	 **/
+
+	public function listDelete($configName, $configValue){
+
+	}
 }
 
