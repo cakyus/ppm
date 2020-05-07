@@ -94,10 +94,8 @@ class Package {
 
 		// Initialize local repository
 
-		if (is_dir($localPath) == FALSE){
-			$commandText = 'git init '.$localPath;
-			$console->exec($commandText);
-		}
+		$commandText = 'git init '.$localPath;
+		$console->exec($commandText);
 
 		$gitCommand = 'git'
 			.' --git-dir '.$localPath.'/.git'
