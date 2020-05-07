@@ -39,8 +39,11 @@ class Config {
 
 		$gitCommand = 'git config '.$this->optionFile;
 
+		// Remove existing configuration
+		$this->del($configName);
+
 		$commandText = $gitCommand
-			.' --replace-all '.escapeshellarg($configName).' '.escapeshellarg($configValue)
+			.' --add '.escapeshellarg($configName).' '.escapeshellarg($configValue)
 			;
 
 		$console->exec($commandText);
