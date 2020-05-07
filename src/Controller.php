@@ -108,10 +108,6 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			$packageName = $match[1];
 			$packageRevision = $match[2];
 
-			trigger_error("packageName: $packageName", E_USER_NOTICE);
-			trigger_error("packageRevision: $packageRevision", E_USER_NOTICE);
-			trigger_error("packageRepository: $packageRepository", E_USER_NOTICE);
-
 			$package = new \Pdr\Ppm\Package;
 			$package->name = $packageName;
 			$package->revision = $packageRevision;
@@ -126,19 +122,21 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 			$config = new \Pdr\Ppm\Git\Config;
 
+			$config->openGlobal();
 			$config->set('ppm.packages.'.$package->name.'.repository', $package->repository);
 
-			$project = new \Pdr\Ppm\Project;
-			$config = new \Pdr\Ppm\Git\Config;
-
-			$configFile = $project->getPath().'/gitconfig';
-			$config->open($configFile);
+			$config->openLocal();
 			$config->set('ppm.packages.'.$package->name.'.revision', $package->revision);
 
+			$configName = 'ppm.packages.'.$package->name.'.commit';
+
 			if (empty($package->commit) == TRUE){
-				$config->del('ppm.packages.'.$package->name.'.commit');
+				$configValue = $config->get($configName);
+				if (is_null($configValue) == FALSE){
+					$config->del($configName);
+				}
 			} else {
-				$config->set('ppm.packages.'.$package->name.'.commit', $package->commit);
+				$config->set($configName, $package->commit);
 			}
 
 		} else {
