@@ -79,18 +79,12 @@ class Package {
 
 	public function install2(){
 
-		trigger_error("name: ".$this->name, E_USER_NOTICE);
-		trigger_error("revision: ".$this->revision, E_USER_NOTICE);
-		trigger_error("repository: ".$this->repository, E_USER_NOTICE);
-
 		$project = new \Pdr\Ppm\Project;
 		$console = new \Pdr\Ppm\Console2;
 
 		// Get localPath
 
 		$localPath = $project->vendorDir.'/'.$this->name;
-
-		trigger_error("localPath: ".$localPath, E_USER_NOTICE);
 
 		// Initialize local repository
 
