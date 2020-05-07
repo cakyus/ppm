@@ -51,9 +51,17 @@ class Config {
 		$console = new \Pdr\Ppm\Console2;
 
 		$gitCommand = 'git config '.$this->optionFile;
-		$commandText = $gitCommand.' --unset-all '.escapeshellarg($configName);
+		$commandText = $gitCommand.' --list --name-only';
 
-		$console->exec($commandText);
+		foreach ($console->line($commandText) as $outputLine){
+			if ($outputLine == $configName){
+				$commandText = $gitCommand.' --unset-all '.escapeshellarg($configName);
+				$console->exec($commandText);
+				return TRUE;
+			}
+		}
+
+		return TRUE;
 	}
 
 	/**
