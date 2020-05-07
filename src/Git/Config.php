@@ -19,50 +19,80 @@ namespace Pdr\Ppm\Git;
 
 class Config {
 
-	protected $optionFile;
+	protected $options;
 
 	public function __construct(){
-		$this->optionFile = '--global';
+		$this->options = array();
+		$this->options['file'] = '--global';
 	}
 
-	public function open($filePath) {
-		$this->optionFile = '--file '.escapeshellarg($filePath);
+	public function openGlobal(){
+		$this->options['file'] = '--global';
+	}
+
+	public function openLocal() {
+		$project = new \Pdr\Ppm\Project;
+		$filePath = $project->getPath().'/gitconfig';
+		$this->options['file'] = '--file '.escapeshellarg($filePath);
 	}
 
 	public function get($configName){
 
+		$console = new \Pdr\Ppm\Console2;
+
+		$commandText = $this->getCommandText().' --list --name-only';
+
+		foreach ($console->line($commandText) as $outputLine){
+			if ($outputLine == $configName){
+				$commandText = $this->getCommandText().' --get '.escapeshellarg($configName);
+				return $console->text($commandText);
+			}
+		}
+
+		return NULL;
 	}
 
 	public function set($configName, $configValue){
 
 		$console = new \Pdr\Ppm\Console2;
 
-		$gitCommand = 'git config '.$this->optionFile;
+		$value = $this->get($configName);
 
-		// Remove existing configuration
-		$this->del($configName);
+		if (is_null($value) == FALSE){
+			if ($value == $configValue){
+				return TRUE;
+			}
+			$commandText = $this->getCommandText()
+				.' '.escapeshellarg($configName)
+				.' '.escapeshellarg($configValue)
+				;
+			$console->exec($commandText);
+		} else {
+			$commandText = $this->getCommandText()
+				.' --add'
+				.' '.escapeshellarg($configName)
+				.' '.escapeshellarg($configValue)
+				;
+			$console->exec($commandText);
+		}
 
-		$commandText = $gitCommand
-			.' --add '.escapeshellarg($configName).' '.escapeshellarg($configValue)
-			;
-
-		$console->exec($commandText);
+		return TRUE;
 	}
 
 	public function del($configName){
 
 		$console = new \Pdr\Ppm\Console2;
 
-		$gitCommand = 'git config '.$this->optionFile;
-		$commandText = $gitCommand.' --list --name-only';
+		$value = $this->get($configName);
 
-		foreach ($console->line($commandText) as $outputLine){
-			if ($outputLine == $configName){
-				$commandText = $gitCommand.' --unset-all '.escapeshellarg($configName);
-				$console->exec($commandText);
-				return TRUE;
-			}
+		if (is_null($value) == TRUE){
+			return TRUE;
 		}
+
+		$commandText = $this->getCommandText()
+			.' --unset '.escapeshellarg($configName)
+			;
+		$console->exec($commandText);
 
 		return TRUE;
 	}
@@ -73,7 +103,7 @@ class Config {
 	 * @return array
 	 **/
 
-	public function listFetch($configName){
+	public function listGet($configName){
 
 	}
 
@@ -83,7 +113,7 @@ class Config {
 	 * @return boolean
 	 **/
 
-	public function listUpdate($configName, $configValue){
+	public function listSet($configName, $configValue){
 
 	}
 
@@ -93,8 +123,12 @@ class Config {
 	 * @return boolean
 	 **/
 
-	public function listDelete($configName, $configValue){
+	public function listDel($configName, $configValue){
 
+	}
+
+	public function getCommandText(){
+		return 'git config '.implode(' ', $this->options);
 	}
 }
 
