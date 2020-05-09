@@ -36,6 +36,12 @@ class Config {
 		$this->options['file'] = '--file '.escapeshellarg($filePath);
 	}
 
+	public function getNames() {
+		$console = new \Pdr\Ppm\Console2;
+		$commandText = $this->getCommandText().' --list --name-only';
+		return $console->line($commandText);
+	}
+
 	public function get($configName){
 
 		$console = new \Pdr\Ppm\Console2;
@@ -131,4 +137,3 @@ class Config {
 		return 'git config '.implode(' ', $this->options);
 	}
 }
-
