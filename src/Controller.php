@@ -32,6 +32,25 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 	public function commandInit() {
 
+		$project = new \Pdr\Ppm\Project;
+		$config = new \Pdr\Ppm\Git\Config;
+
+		// import composer configuration
+
+		$composerFile = $project->getPath().'/composer.json';
+		$config->openLocal();
+
+		if (is_file($composerFile)) {
+			$text =  file_get_contents($composerFile);
+			$data =  json_decode($text, TRUE);
+			if (isset($data['require']) == TRUE) {
+				foreach ($data['require'] as $packageName => $packageRevision) {
+					// remove "dev-"
+					$packageRevision = preg_replace("/^dev\-/", '', $packageRevision);
+					$config->set('ppm.packages.'.$packageName.'.revision', $packageRevision);
+				}
+			}
+		}
 	}
 
 	/**
