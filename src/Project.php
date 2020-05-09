@@ -83,6 +83,24 @@ class Project {
 		return $packages;
 	}
 
+	public function getPackageNames() {
+
+		$config = new \Pdr\Ppm\Git\Config;
+
+		$config->openLocal();
+		$packageNames = array();
+
+		foreach ($config->getNames() as $configName) {
+			if (preg_match("/^ppm\.packages\.([^\.]+)\.revision/", $configName, $match) == TRUE) {
+				$packageNames[$match[1]] = $match[1];
+			}
+		}
+
+		$packageNames = array_values($packageNames);
+
+		return $packageNames;
+	}
+
 	public function getPackage($packageName){
 
 		$packages = $this->getPackages();
