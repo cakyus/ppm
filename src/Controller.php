@@ -283,6 +283,8 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 			$config = new \Pdr\Ppm\Git\Config;
 
+			// TODO repository should be a list
+
 			$config->openGlobal();
 			$config->set('ppm.packages.'.$package->name.'.repository', $package->repository);
 
@@ -298,6 +300,26 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 				}
 			} else {
 				$config->set($configName, $package->commit);
+			}
+
+			$project = new \Pdr\Ppm\Project;
+
+			$composerFile = $project->getPath().'/composer.json';
+
+			if (is_file($composerFile)) {
+
+				$text =  file_get_contents($composerFile);
+				$data =  json_decode($text, TRUE);
+
+				if (isset($data['require']) == FALSE) {
+					$data['require'] = array();
+				}
+
+				// TODO detect revision type
+				// when revision type is branch the add "dev-" into revision
+				$data['require'][$package->name] = 'dev-'.$package->revision;
+				$text = json_encode($data, JSON_PRETTY_PRINT |  JSON_UNESCAPED_SLASHES);
+				file_put_contents($composerFile, $text);
 			}
 
 		} else {
