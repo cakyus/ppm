@@ -20,6 +20,8 @@ namespace Pdr\Ppm\Git;
 class Config {
 
 	protected $options;
+	protected static $_configNames;
+	protected static $_configValues;
 
 	public function __construct(){
 		$this->options = array();
@@ -28,30 +30,48 @@ class Config {
 
 	public function openGlobal(){
 		$this->options['file'] = '--global';
+		if (is_null(self::$_configNames)){
+			$console = new \Pdr\Ppm\Console2;
+			$commandText = $this->getCommandText().' --list --name-only';
+			$configNames = $console->line($commandText);
+			self::$_configNames = $configNames;
+			self::$_configValues = array();
+		}
 	}
 
 	public function openLocal() {
 		$project = new \Pdr\Ppm\Project;
 		$filePath = $project->getPath().'/gitconfig';
 		$this->options['file'] = '--file '.escapeshellarg($filePath);
+		if (is_null(self::$_configNames)){
+			$console = new \Pdr\Ppm\Console2;
+			$commandText = $this->getCommandText().' --list --name-only';
+			$configNames = $console->line($commandText);
+			self::$_configNames = $configNames;
+			self::$_configValues = array();
+		}
 	}
 
 	public function getNames() {
-		$console = new \Pdr\Ppm\Console2;
-		$commandText = $this->getCommandText().' --list --name-only';
-		return $console->line($commandText);
+		return self::$_configNames;
 	}
 
 	public function get($configName){
 
 		$console = new \Pdr\Ppm\Console2;
 
+		if (isset(self::$_configValues[$configName])){
+			return self::$_configValues[$configName];
+		}
+
 		$commandText = $this->getCommandText().' --list --name-only';
 
-		foreach ($console->line($commandText) as $outputLine){
+		foreach (self::$_configNames as $outputLine){
 			if ($outputLine == $configName){
 				$commandText = $this->getCommandText().' --get '.escapeshellarg($configName);
-				return $console->text($commandText);
+				$configValue = $console->text($commandText);
+				self::$_configValues[$outputLine] = $configValue;
+				return $configValue;
 			}
 		}
 
@@ -73,6 +93,7 @@ class Config {
 				.' '.escapeshellarg($configValue)
 				;
 			$console->exec($commandText);
+			self::$_configValues[$configName] = $configValue;
 		} else {
 			$commandText = $this->getCommandText()
 				.' --add'
@@ -80,6 +101,7 @@ class Config {
 				.' '.escapeshellarg($configValue)
 				;
 			$console->exec($commandText);
+			self::$_configValues[$configName] = $configValue;
 		}
 
 		return TRUE;
@@ -99,6 +121,8 @@ class Config {
 			.' --unset '.escapeshellarg($configName)
 			;
 		$console->exec($commandText);
+
+		unset(self::$_configNames[$configName]);
 
 		return TRUE;
 	}
