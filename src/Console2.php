@@ -24,7 +24,10 @@ namespace Pdr\Ppm;
 class Console2 {
 
 	public function exec($command){
-		fwrite(STDERR, "> $command\n");
+		$option = new \Pdr\Ppm\Cli\Option;
+		if ($option->getOption('v')){
+			fwrite(STDERR, "> $command\n");
+		}
 		passthru($command, $exitCode);
 		if ($exitCode != 0){
 			throw new \Exception("Command return non zero exit code");
@@ -32,7 +35,10 @@ class Console2 {
 	}
 
 	public function text($command){
-		fwrite(STDERR, "> $command\n");
+		$option = new \Pdr\Ppm\Cli\Option;
+		if ($option->getOption('v')){
+			fwrite(STDERR, "> $command\n");
+		}
 		exec($command, $outputLines, $exitCode);
 		if ($exitCode != 0){
 			throw new \Exception("Command return non zero exit code");
@@ -42,7 +48,10 @@ class Console2 {
 	}
 
 	public function line($command){
-		fwrite(STDERR, "> $command\n");
+		$option = new \Pdr\Ppm\Cli\Option;
+		if ($option->getOption('v')){
+			fwrite(STDERR, "> $command\n");
+		}
 		exec($command, $outputLines, $exitCode);
 		if ($exitCode != 0){
 			throw new \Exception("Command return non zero exit code");
