@@ -33,6 +33,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 	public function commandInit() {
 		$this->initComposer();
 		$this->initAutoload();
+		$this->initConfig();
 	}
 
 	protected function initComposer() {
@@ -156,6 +157,46 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		}
 
 		return $autoloadText;
+	}
+
+	public function initConfig(){
+
+		$project = new \Pdr\Ppm\Project2;
+		$console = new \Pdr\Ppm\Console2;
+		$config = new \Pdr\Ppm\Git\Config;
+
+		$vendorDir = $project->getVendorDir();
+		$config->openLocal();
+
+		foreach ($project->getPackages() as $package){
+
+			if (is_dir($vendorDir.'/'.$package->name) == FALSE){
+				continue;
+			}
+
+			$gitCommand = 'git'
+				.' --git-dir '.escapeshellarg($vendorDir.'/'.$package->name.'/.git')
+				.' --work-tree '.escapeshellarg($vendorDir.'/'.$package->name)
+				;
+
+			// check commit
+			$commandText = $gitCommand
+				.' for-each-ref --format "%(objectname)" refs/heads/'.$package->revision
+				;
+
+			$packageCommit = $console->text($commandText);
+
+			if (strlen($packageCommit) == 0){
+				fwrite(STDERR, 'WARNING'
+					.' '.$package->name
+					.' '.$package->revision
+					.' has no commit'
+					."\n");
+				continue;
+			}
+
+			$config->set('ppm.packages.'.$package->name.'.commit', $packageCommit);
+		}
 	}
 
 	/**
