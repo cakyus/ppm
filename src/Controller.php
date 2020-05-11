@@ -528,21 +528,47 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 	public function commandList(){
 
-		$project = new \Pdr\Ppm\Project;
-		$globalConfig = new \Pdr\Ppm\GlobalConfig;
+		$project = new \Pdr\Ppm\Project2;
+		$console = new \Pdr\Ppm\Console2;
 
-		$config = $project->getConfig();
+		$vendorDir = $project->getVendorDir();
 
-		if (empty($config->data->require)) {
-			 return false;
-		}
+		foreach ($project->getPackages() as $package) {
 
-		foreach ($config->data->require as $packageName => $packageVersion) {
-			 echo $packageName.' '.$packageVersion;
-			 if ( ( $packageUrl = $globalConfig->getRepositoryUrl($packageName) ) !== false ) {
-					echo ' '.$packageUrl;
-			 }
-			 echo "\n";
+			if ($package->name == 'php') {
+				continue;
+			}
+
+			$packageDir = $vendorDir.'/'.$package->name;
+			$gitCommand = 'git'
+				.' --git-dir '.escapeshellarg($packageDir.'/.git')
+				.' --work-tree '.escapeshellarg($packageDir)
+				;
+
+			if (is_dir($packageDir == FALSE)){
+				continue;
+			} elseif (is_dir($packageDir.'/.git' == FALSE)){
+				continue;
+			}
+
+			// check commit
+			$commandText = $gitCommand
+				.' for-each-ref --format "%(objectname)" refs/remotes/origin/'.$package->revision
+				;
+
+			$gitRemoteCommit = $console->text($commandText);
+
+			if (strlen($gitRemoteCommit) == 0){
+				continue;
+			}
+
+			$commandText = $gitCommand.' config --local remote.origin.url';
+			$packageRepository = $console->text($commandText);
+
+			echo $package->name
+				.' '.$package->revision
+				.' '.$packageRepository
+				."\n";
 		}
 	}
 
