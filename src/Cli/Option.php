@@ -19,8 +19,21 @@ namespace Pdr\Ppm\Cli;
 
 class Option {
 
-	public function getOption($name){
-
+	public function getOption($optionName){
+		$optionValue = NULL;
+		for ($i = 2; $i < $_SERVER['argc']; $i++){
+			$optionText = $_SERVER['argv'][$i];
+			if (preg_match("/^\-([^=]+)(=(.+))?$/", $optionText, $match)){
+				if ($match[1] != $optionName){
+					continue;
+				}
+				$optionValue = TRUE;
+				if (isset($match[3])){
+					$optionValue = $match[3];
+				}
+			}
+		}
+		return $optionValue;
 	}
 
 	public function getCommand($index){
