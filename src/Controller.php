@@ -360,7 +360,11 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 	public function commandStatus() {
 
-		$project = new \Pdr\Ppm\Project;
+		$project = new \Pdr\Ppm\Project2;
+		$console = new \Pdr\Ppm\Console2;
+
+		$vendorDir = $project->getVendorDir();
+
 		foreach ($project->getPackages() as $package) {
 
 			if ($package->name == 'php') {
@@ -372,20 +376,42 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 			$localStatus = '?'; // Unknown
 
-			if ( ( $repository = $package->getRepository() ) == false ){
-				$localStatus = 'U'; // Un-initialize
+			$packageDir = $vendorDir.'/'.$package->name;
+			if (is_dir($packageDir == FALSE)){
+				$lockStatus = '?';
+				$remoteStatus = '?';
+				continue;
+			} elseif (is_dir($packageDir.'/.git' == FALSE)){
+				$lockStatus = '?';
+				$remoteStatus = '?';
+				continue;
+			}
+
+			$gitCommand = 'git'
+				.' --git-dir '.escapeshellarg($packageDir.'/.git')
+				.' --work-tree '.escapeshellarg($packageDir)
+				;
+
+			// check commit
+			$commandText = $gitCommand
+				.' for-each-ref --format "%(objectname)" refs/heads/'.$package->revision
+				;
+
+			$gitCommit = $console->text($commandText);
+
+			if (strlen($gitCommit) == 0){
+				$lockStatus = '?';
+				$remoteStatus = '?';
+				continue;
+			}
+
+			$commandText = $gitCommand.' status --short';
+			$gitStatus = $console->text($commandText);
+
+			if (strlen($gitStatus) == 0){
+				$localStatus = ' ';
 			} else {
-
-				$command  = $repository->getGitCommand();
-				$command .= ' status --short';
-				$text = \Pdr\Ppm\Console::text($command);
-
-				if ($repository->hasChanges()){
-					$localStatus = 'M'; // Has local changes
-				} else {
-					$localStatus = ' '; // No local changes
-				}
-
+				$localStatus = 'M';
 			}
 
 			// lock status
@@ -393,15 +419,8 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 			$lockStatus = '?'; // Unknown
 
-			if (	( $localStatus == ' ' || $localStatus == 'M' )
-
-				&&	( $lockConfig = $project->getLockConfig() ) != false
-				&&	( $lockCommitHash = $lockConfig->getPackageCommitHash($package->name) ) != false
-
-				&&	( $repositoryCommitHash = $repository->getCommitHash('HEAD') ) != false
-				){
-
-				if ($repositoryCommitHash == $lockCommitHash){
+			if ($localStatus == ' ' || $localStatus == 'M') {
+				if ($package->commit == $gitCommit){
 					$lockStatus = ' ';
 				} else {
 					$lockStatus = 'M';
@@ -413,13 +432,16 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 			$remoteStatus = '?'; // Unknown
 
-			if ( ( $lockStatus == ' ' || $lockStatus == 'M' )
+			if ($lockStatus == ' ' || $lockStatus == 'M'){
 
-				&& ( $remote = $repository->getRemote('origin') ) !== false
-				&& ( $remoteCommitHash = $remote->getCommitHash($package->getVersion()) ) !== false
-				){
+				$commandText = $gitCommand
+					.' for-each-ref'
+					.' --format "%(objectname)"'
+					.' refs/remotes/origin/'.$package->revision
+					;
+				$remoteCommit = $console->text($commandText);
 
-				if ($remoteCommitHash == $lockCommitHash){
+				if ($remoteCommit == $gitCommit){
 					$remoteStatus = ' ';
 				} else {
 					$remoteStatus = 'M';
@@ -434,7 +456,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			}
 
 			echo $localStatus.$lockStatus.$remoteStatus
-				.' '.$project->getVendorDir().'/'.$package->name
+				.' '.$package->name
 				."\n";
 		}
 	}
