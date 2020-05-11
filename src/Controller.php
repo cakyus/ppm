@@ -279,11 +279,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			$package->repository = $packageRepository;
 			$package->install2();
 
-			// TODO Update config
-
-			// Update autoload
-
-			$this->commandCreateAutoload();
+			$this->initAutoload();
 
 			$config = new \Pdr\Ppm\Git\Config;
 
