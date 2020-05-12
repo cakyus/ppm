@@ -32,8 +32,14 @@ class Config {
 		$this->options['file'] = '--global';
 		if (is_null(self::$_configNames)){
 			$console = new \Pdr\Ppm\Console2;
-			$commandText = $this->getCommandText().' --list --name-only';
-			$configNames = $console->line($commandText);
+			// NOTE git 1.9.1 does not support option "--name-only"
+			$commandText = $this->getCommandText().' --list';
+			$configNames = array();
+			foreach ($console->line($commandText) as $configLine){
+				if (preg_match("/^[^=]+/", $configLine, $match)){
+					$configNames[] = $match[0];
+				}
+			}
 			self::$_configNames = $configNames;
 			self::$_configValues = array();
 		}
@@ -48,8 +54,14 @@ class Config {
 		$this->options['file'] = '--file '.escapeshellarg($filePath);
 		if (is_null(self::$_configNames)){
 			$console = new \Pdr\Ppm\Console2;
-			$commandText = $this->getCommandText().' --list --name-only';
-			$configNames = $console->line($commandText);
+			// NOTE git 1.9.1 does not support option "--name-only"
+			$commandText = $this->getCommandText().' --list';
+			$configNames = array();
+			foreach ($console->line($commandText) as $configLine){
+				if (preg_match("/^[^=]+/", $configLine, $match)){
+					$configNames[] = $match[0];
+				}
+			}
 			self::$_configNames = $configNames;
 			self::$_configValues = array();
 		}
