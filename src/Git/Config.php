@@ -67,8 +67,6 @@ class Config {
 			return self::$_configValues[$configName];
 		}
 
-		$commandText = $this->getCommandText().' --list --name-only';
-
 		foreach (self::$_configNames as $outputLine){
 			if ($outputLine == $configName){
 				$commandText = $this->getCommandText().' --get '.escapeshellarg($configName);
