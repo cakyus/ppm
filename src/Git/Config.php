@@ -42,6 +42,9 @@ class Config {
 	public function openLocal() {
 		$project = new \Pdr\Ppm\Project;
 		$filePath = $project->getPath().'/gitconfig';
+		if (is_file($filePath) == FALSE){
+			touch($filePath);
+		}
 		$this->options['file'] = '--file '.escapeshellarg($filePath);
 		if (is_null(self::$_configNames)){
 			$console = new \Pdr\Ppm\Console2;
