@@ -22,7 +22,7 @@ class Repository {
 	protected $workTree;
 	protected $gitDir;
 
-	public function open($gitDir, $workTree=null){
+	public function open($gitDir, $workTree=NULL){
 
 		if (is_dir($gitDir) == false){
 			throw new \Exception("gitDir is not found");
@@ -109,7 +109,7 @@ class Repository {
 		return $this->gitDir;
 	}
 
-	public function hasChanges() {
+	public function hasChanges($path=NULL) {
 
 		$command  = $this->getGitCommand();
 		$command .= ' status --short';
@@ -140,4 +140,24 @@ class Repository {
 		return $branches;
 	}
 
+	/**
+	 * Return active branch name
+	 **/
+
+	public function getCurrentBranch() {
+
+	}
+
+	/**
+	 * Get commit object of HEAD
+	 * @return string|boolean
+	 **/
+
+	public function getCurrentCommit() {
+
+		$commandText  = $this->getGitCommand();
+		$commandText .= ' rev-parse HEAD';
+		$commitHash = \Pdr\Ppm\Console::text($commandText);
+		return $this->getCommit($commitHash);
+	}
 }
