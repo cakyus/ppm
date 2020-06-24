@@ -243,7 +243,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			}
 
 			// generate autoload
-			$this->commandAutoload();
+			$this->initAutoload();
 
 			// execute post install command
 			$this->commandExec('post-install-cmd');
