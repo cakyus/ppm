@@ -33,48 +33,64 @@ class Package {
 	public $remotePath;
 
 	public $repository;
+	public $repositoryUrl;
 
 	public $path;
 
-	public function open(\Pdr\Ppm\Project $project, $name, $version) {
+	public function open(\Pdr\Ppm\Project $project, $name, $revision, $repositoryUrl) {
 		$this->project = $project;
 		$this->name = $name;
-		$this->version = $version;
+		$this->revision = $revision;
+		$this->version = $revision;
+		$this->repositoryUrl = $repositoryUrl;
 	}
 
-	public function create($packageName, $packageVersion, $packagePath) {
+	public function create() {
 
 		$config = new \Pdr\Ppm\GlobalConfig;
 
-		if (is_dir($packagePath) == true) {
-			throw new \Exception("packagePath is exists");
+		$packageName = $this->name;
+		// TODO resolve packageVersion from packageRevision
+		$packageVersion = $this->revision;
+		$packageRepositoryUrl = $this->repositoryUrl;
+		$packagePath = $this->project->getVendorDir().'/'.$packageName;
+
+		if (is_dir(dirname($packagePath)) == FALSE){
+			mkdir(dirname($packagePath));
 		}
 
-		$repositoryUrl = $config->getRepositoryUrl($packageName);
-
-		$command = 'git init '.escapeshellarg($packagePath);
-		\Pdr\Ppm\Console::exec($command);
+		if (is_dir($packagePath) == FALSE){
+			mkdir($packagePath);
+		}
 
 		$gitCommand = 'git'
 			.' --git-dir '.$packagePath.'/.git'
 			.' --work-tree '.$packagePath
 			;
 
-		$command = $gitCommand.' remote add origin '.escapeshellarg($repositoryUrl);
-		\Pdr\Ppm\Console::exec($command);
+		if (is_dir($packagePath.'/.git') ==  FALSE){
 
-		$command = $gitCommand.' fetch --depth=1 origin '.$packageVersion;
-		\Pdr\Ppm\Console::exec($command);
+			$commandText = 'git init '.escapeshellarg($packagePath);
+			\Pdr\Ppm\Console::exec($commandText);
 
-		$command = $gitCommand.' checkout origin/'.$packageVersion.' -b '.$packageVersion;
-		\Pdr\Ppm\Console::exec($command);
+			$commandText = $gitCommand.' remote add origin '.escapeshellarg($packageRepositoryUrl);
+			\Pdr\Ppm\Console::exec($commandText);
 
-		// Execute install command
+			$commandText = $gitCommand.' fetch --depth=1 origin '.$packageVersion;
+			\Pdr\Ppm\Console::exec($commandText);
 
-		chdir($packagePath);
+			$commandText = $gitCommand.' checkout origin/'.$packageVersion.' -b '.$packageVersion;
+			\Pdr\Ppm\Console::exec($commandText);
+		}
 
-		$controller = new \Pdr\Ppm\Controller;
-		$controller->commandInstall();
+		$commandText = $gitCommand.' log -n 1 --format=%H HEAD';
+		$commitHash = \Pdr\Ppm\Console::text($commandText);
+		$commitHash = trim($commitHash);
+		$this->commit = $commitHash;
+
+		$lockConfig = new \Pdr\Ppm\LockConfig;
+		$lockConfig->open($this);
+		$lockConfig->save();
 	}
 
 	public function install2(){
@@ -135,6 +151,8 @@ class Package {
 		// update commit value
 		$commandText = $gitCommand.' log -n 1 --format=%H';
 		$this->commit = $console->text($commandText);
+
+		$this->createLock();
 
 		return TRUE;
 	}
@@ -313,5 +331,9 @@ class Package {
 		} else {
 			return 'tag';
 		}
+	}
+
+	public function getProject() {
+		return $this->project;
 	}
 }

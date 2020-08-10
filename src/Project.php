@@ -53,7 +53,6 @@ class Project {
 		return $lockConfig;
 	}
 
-
 	public function getPath(){
 		return $this->path;
 	}

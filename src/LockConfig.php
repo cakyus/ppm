@@ -17,74 +17,44 @@
 
 namespace Pdr\Ppm;
 
-class LockConfig extends \Pdr\Ppm\Config {
+/**
+ * # Data Structure
+ *
+ *   packages
+ *     + packageName
+ *       + packageRevision: commitHash
+ **/
+
+class LockConfig {
+
+	protected $filePath;
+	protected $packages;
 
 	public function __construct() {
-		parent::__construct();
-		$this->initialize();
-	}
-
-	protected function initialize() {
-		$this->data = new \stdClass;
-		$this->data->packages = array();
-	}
-
-	public function load($file) {
-		$result = parent::load($file);
-		if (empty($result)) {
-			$this->initialize();
-		}
-		return $result;
+		$this->packages = array();
 	}
 
 	public function open(\Pdr\Ppm\Package $package){
-		$file = $package->getPath().'/composer.lock';
-		return $this->load($file);
-	}
 
-	public function getPackage($packageName) {
+		$project = $package->getProject();
+		$filePath = $project->getPath().'/ppm.lock.json';
 
-		foreach ($this->data->packages as $packageData){
-			if ($packageData->name == $packageName){
-				return $packageData;
-			}
-		}
+		$this->filePath = $filePath;
 
-		return false;
-	}
+		$packageData = new \stdClass;
+		$packageDataSource = new \stdClass;
+		$packageData->name = $package->name;
+		$packageData->version = $package->version;
+		$packageDataSource->type = 'cvs';
+		$packageDataSource->reference = $package->commit;
+		$packageData->source = $packageDataSource;
 
-	public function getPackageCommitHash($packageName) {
-
-		if ( ( $packageData = $this->getPackage($packageName) ) === false ){
-			return false;
-		}
-
-		if (empty( $packageData->source->reference) ){
-			return false;
-		}
-
-		return $packageData->source->reference;
-	}
-
-	public function addPackage(\Pdr\Ppm\Package $package, $commitHash){
-		$packageLock = new \stdClass;
-		$packageLock->name = $package->name;
-		$packageLock->source = new \stdClass;
-		$packageLock->source->type = 'cvs';
-		$packageLock->source->reference = $commitHash;
-		$this->data->packages[] = $packageLock;
+		$this->packages[] = $packageData;
 	}
 
 	public function save() {
-
-		foreach (array(
-				'require','require-dev'
-			, 'autoload', 'autoload-dev'
-			) as $propertyName) {
-			unset($this->data->$propertyName);
-		}
-
-		parent::save();
+		$fileData = $this->packages;
+		$fileText = json_encode($fileData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+		file_put_contents($this->filePath, $fileText);
 	}
 }
-

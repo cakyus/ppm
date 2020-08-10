@@ -100,7 +100,9 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 	protected function initAutoloadFile($packageDir, $composerFile) {
 
-		$autoloadText = "\t".'// '.$packageDir."\n\n";
+		$autoloadText = "\t".'// package '
+			.str_replace(array('$vendorDir.\'/',"'"), '', $packageDir)
+			."\n\n";
 
 		if (is_file($composerFile) == FALSE) {
 			return $autoloadText;
@@ -118,8 +120,9 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			// classmap
 
 			if ($method == 'classmap') {
+				$autoloadText .= "\t// > autoload classmap\n";
 				foreach ($autoload as $autoloadSourceFile){
-					$autoloadText .= "\t\$classFile = ".$packageDir."/".$autoloadSourceFile."';\n";
+					$autoloadText .= "\t\$classFile = ".$packageDir.".'/".$autoloadSourceFile."';\n";
 					$autoloadText .= "\tif (is_file(\$classFile)){ require_once(\$classFile); }\n\n";
 				}
 				continue;
@@ -128,6 +131,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			// psr-4
 
 			if ($method == 'psr-4'){
+				$autoloadText .= "\t// > autoload psr-4\n\n";
 				foreach ($autoload as $classPrefix => $pathPrefix){
 					$classPrefixLength = strlen($classPrefix);
 					$pathPrefix = $packageDir.'.\'/'.$pathPrefix.'\'';
@@ -142,6 +146,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			// psr-0
 
 			if ($method == 'psr-0'){
+				$autoloadText .= "\t// > autoload psr-0\n\n";
 				foreach ($autoload as $classPrefix => $pathPrefix){
 					$classPrefixLength = strlen($classPrefix);
 					$pathPrefix = $packageDir.'.\'/'.$pathPrefix.'\'';
@@ -149,6 +154,18 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 					$autoloadText .= "\t\t\$classFile = $pathPrefix.str_replace('\\\\','/',\$className).'.php';\n";
 					$autoloadText .= "\t\tif (is_file(\$classFile)){ require_once(\$classFile); }\n";
 					$autoloadText .= "\t}\n\n";
+				}
+				continue;
+			}
+
+			// files
+
+			if ($method == 'files'){
+				$autoloadText .= "\t// > autoload files\n\n";
+				foreach ($autoload as $filePath){
+					$autoloadText .= "\t\$classFile = $packageDir.'/$filePath';\n";
+					$autoloadText .= "\tif (is_file(\$classFile)){ require_once(\$classFile); }\n";
+					$autoloadText .= "\n\n";
 				}
 				continue;
 			}
@@ -265,6 +282,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 			$packageText = $option->getCommand(0);
 			$packageRepository = $option->getCommand(1);
+			$packageRepositoryUrl = $option->getCommand(1);
 
 			if (preg_match("/^([^:]+):(.+)$/", $packageText, $match) == FALSE){
 				throw new \Exception("Invalid packageText");
@@ -273,11 +291,11 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			$packageName = $match[1];
 			$packageRevision = $match[2];
 
+			$project = new \Pdr\Ppm\Project;
 			$package = new \Pdr\Ppm\Package;
-			$package->name = $packageName;
-			$package->revision = $packageRevision;
-			$package->repository = $packageRepository;
-			$package->install2();
+
+			$package->open($project, $packageName, $packageRevision, $packageRepositoryUrl);
+			$package->create();
 
 			$this->initAutoload();
 
