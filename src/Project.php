@@ -41,13 +41,14 @@ class Project {
 		$this->developmentPackages = array();
 
 		$config = new \Pdr\Ppm\Config;
-		$config->open($this);
+		$this->config = $config;
+
 
 		$configLock = new \Pdr\Ppm\ConfigLock;
-		$configLock->open($this);
-
-		$this->config = $config;
 		$this->configLock = $configLock;
+
+		$config->open($this);
+		$configLock->open($this);
 	}
 
 	public function getConfig(){

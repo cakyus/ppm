@@ -27,11 +27,11 @@ class Config {
 	public function open(\Pdr\Ppm\Project $project){
 
 		$this->project = $project;
-		$filePath = $this->project->getPath().'/ppm.json';
+		$this->filePath = $this->project->getPath().'/ppm.json';
 
-		if (is_file($filePath)){
+		if (is_file($this->filePath)){
 
-			$fileText = file_get_contents($filePath);
+			$fileText = file_get_contents($this->filePath);
 			$fileData = json_decode($fileText);
 
 			$this->project->name = $fileData->name;
@@ -39,22 +39,21 @@ class Config {
 
 			$this->project->packages = array();
 			$attributeName = 'require';
-			foreach ($fileData->$attributeName as $packageDataName => $packageDataRevision){
+			foreach ($fileData->$attributeName as $packageDataName => $packageDataReference){
 				$package = new \Pdr\Ppm\Package;
-				$package->open($project, $packageDataName, $packageDataRevision, NULL);
+				$package->open($project, $packageDataName, $packageDataReference, NULL);
 				$this->project->packages[] = $package;
 			}
 
 			$this->project->developmentPackages = array();
 			$attributeName = 'require-dev';
-			foreach ($fileData->$attributeName as $packageDataName => $packageDataRevision){
+			foreach ($fileData->$attributeName as $packageDataName => $packageDataReference){
 				$package = new \Pdr\Ppm\Package;
-				$package->open($project, $packageDataName, $packageDataRevision, NULL);
+				$package->open($project, $packageDataName, $packageDataReference, NULL);
 				$this->project->developmentPackages[] = $package;
 			}
 		}
 
-		$this->filePath = $filePath;
 	}
 
 	public function save(){
@@ -71,14 +70,14 @@ class Config {
 
 		foreach ($this->project->packages as $package){
 			$packageName = $package->name;
-			$packageRevision = $package->revision;
-			$project->$attributePackage->$packageName = $packageRevision;
+			$packageReference = $package->reference;
+			$project->$attributePackage->$packageName = $packageReference;
 		}
 
 		foreach ($this->project->developmentPackages as $package){
 			$packageName = $package->name;
-			$packageRevision = $package->revision;
-			$project->$attributeDevelopmentPackage->$packageName = $packageRevision;
+			$packageReference = $package->reference;
+			$project->$attributeDevelopmentPackage->$packageName = $packageReference;
 		}
 
 		$fileText = json_encode($project, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

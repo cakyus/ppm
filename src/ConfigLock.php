@@ -31,7 +31,32 @@ class ConfigLock {
 	protected $filePath;
 
 	public function open(\Pdr\Ppm\Project $project){
+
 		$this->project = $project;
+		$this->filePath = $this->project->getPath().'/ppm.lock.json';
+
+		if (is_file($this->filePath)){
+
+			$fileText = file_get_contents($this->filePath);
+			$fileData = json_decode($fileText);
+
+			foreach ($fileData->packages as $packageData){
+
+				foreach ($this->project->packages as $package){
+					if ($package->name == $packageData->name){
+						$package->version = $packageData->version;
+						$package->commitHash = $packageData->source->reference;
+					}
+				}
+
+				foreach ($this->project->developmentPackages as $package){
+					if ($package->name == $packageData->name){
+						$package->version = $packageData->version;
+						$package->commitHash = $packageData->source->reference;
+					}
+				}
+			}
+		}
 	}
 
 	public function save() {

@@ -30,10 +30,6 @@ class Package {
 	// git commit hash
 	public $commitHash;
 
-	// @deprecated use repository
-	public $remotePath;
-
-	public $repository;
 	public $repositoryUrl;
 
 	public $path;
@@ -44,10 +40,25 @@ class Package {
 		$packageVersion = $packageReference;
 
 		$this->project = $project;
+
 		$this->name = $packageName;
 		$this->reference = $packageReference;
 		$this->version = $packageVersion;
 		$this->repositoryUrl = $packageRepositoryUrl;
+		$this->path = $project->getVendorDir().'/'.$packageName;
+
+		if (is_dir($this->path)){
+			if (is_null($packageRepositoryUrl) == TRUE){
+				$gitCommand = 'git'
+					.' --git-dir '.$this->path.'/.git'
+					.' --work-tree '.$this->path
+					;
+				$commandText = $gitCommand.' config remote.origin.url';
+				$packageRepositoryUrl = \Pdr\Ppm\Console::text($commandText);
+				$packageRepositoryUrl = trim($packageRepositoryUrl);
+				$this->repositoryUrl = $packageRepositoryUrl;
+			}
+		}
 	}
 
 	public function create() {
