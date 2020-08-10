@@ -19,51 +19,74 @@ namespace Pdr\Ppm;
 
 class Config {
 
-	protected $file;
-	public $data;
+	protected $project;
+	protected $filePath;
 
-	public function __construct(){}
+	public function __construct() {}
 
-	public function load($file){
+	public function open(\Pdr\Ppm\Project $project){
 
-		$this->file = $file;
+		$this->project = $project;
+		$filePath = $this->project->getPath().'/ppm.json';
 
-		if (is_file($file) == false){
-			return false;
-		}
+		if (is_file($filePath)){
 
-		$text = file_get_contents($file);
-		$data = json_decode($text);
+			$fileText = file_get_contents($filePath);
+			$fileData = json_decode($fileText);
 
-		if (json_last_error()){
-			throw new \Exception("JSON parse error");
-		}
+			$this->project->name = $fileData->name;
+			$this->project->description = $fileData->description;
 
-		$this->data = $data;
+			$this->project->packages = array();
+			$attributeName = 'require';
+			foreach ($fileData->$attributeName as $packageDataName => $packageDataRevision){
+				$package = new \Pdr\Ppm\Package;
+				$package->open($project, $packageDataName, $packageDataRevision, NULL);
+				$this->project->packages[] = $package;
+			}
 
-		foreach (array(
-			  'require', 'require-dev'
-			, 'autoload', 'autoload-dev'
-			) as $propertyName) {
-			if (property_exists($this->data, $propertyName) == false) {
-				$this->data->$propertyName = new \stdClass;
+			$this->project->developmentPackages = array();
+			$attributeName = 'require-dev';
+			foreach ($fileData->$attributeName as $packageDataName => $packageDataRevision){
+				$package = new \Pdr\Ppm\Package;
+				$package->open($project, $packageDataName, $packageDataRevision, NULL);
+				$this->project->developmentPackages[] = $package;
 			}
 		}
 
-		return true;
-	}
-
-	public function open(\Pdr\Ppm\Package $package){
-		$file = $package->getPath().'/composer.json';
-		return $this->load($file);
-	}
-
-	public function getData(){
-		return $this->data;
+		$this->filePath = $filePath;
 	}
 
 	public function save(){
-		$text = json_encode($this->data, JSON_PRETTY_PRINT |  JSON_UNESCAPED_SLASHES);
-		file_put_contents($this->file, $text);
+
+		$project = new \stdClass;
+
+		$project->name = $this->project->name;
+		$project->description = $this->project->description;
+
+		$attributePackage = 'require';
+		$project->$attributePackage = new \stdClass;
+		$attributeDevelopmentPackage = 'require-dev';
+		$project->$attributeDevelopmentPackage = new \stdClass;
+
+		foreach ($this->project->packages as $package){
+			$packageName = $package->name;
+			$packageRevision = $package->revision;
+			$project->$attributePackage->$packageName = $packageRevision;
+		}
+
+		foreach ($this->project->developmentPackages as $package){
+			$packageName = $package->name;
+			$packageRevision = $package->revision;
+			$project->$attributeDevelopmentPackage->$packageName = $packageRevision;
+		}
+
+		$fileText = json_encode($project, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+		$fileLines = array();
+		foreach (explode("\n", $fileText) as $fileLine){
+			$fileLines[] = str_replace('    ', '  ', $fileLine);
+		}
+		$fileText = implode("\n", $fileLines);
+		file_put_contents($this->filePath, $fileText);
 	}
 }

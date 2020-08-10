@@ -23,11 +23,12 @@ class Package {
 
 	public $name;
 
-	// @deprecated use revision
-	public $version;
-
-	public $revision;
-	public $commit;
+	// git reference
+	public $reference; // eg. master, 1.*
+	// git branch or tag
+	public $version; // eg. master, 1.0.10
+	// git commit hash
+	public $commitHash;
 
 	// @deprecated use repository
 	public $remotePath;
@@ -37,12 +38,16 @@ class Package {
 
 	public $path;
 
-	public function open(\Pdr\Ppm\Project $project, $name, $revision, $repositoryUrl) {
+	public function open(\Pdr\Ppm\Project $project, $packageName, $packageReference, $packageRepositoryUrl) {
+
+		// TODO resolve version from reference
+		$packageVersion = $packageReference;
+
 		$this->project = $project;
-		$this->name = $name;
-		$this->revision = $revision;
-		$this->version = $revision;
-		$this->repositoryUrl = $repositoryUrl;
+		$this->name = $packageName;
+		$this->reference = $packageReference;
+		$this->version = $packageVersion;
+		$this->repositoryUrl = $packageRepositoryUrl;
 	}
 
 	public function create() {
@@ -51,7 +56,7 @@ class Package {
 
 		$packageName = $this->name;
 		// TODO resolve packageVersion from packageRevision
-		$packageVersion = $this->revision;
+		$packageVersion = $this->version;
 		$packageRepositoryUrl = $this->repositoryUrl;
 		$packagePath = $this->project->getVendorDir().'/'.$packageName;
 
@@ -86,11 +91,7 @@ class Package {
 		$commandText = $gitCommand.' log -n 1 --format=%H HEAD';
 		$commitHash = \Pdr\Ppm\Console::text($commandText);
 		$commitHash = trim($commitHash);
-		$this->commit = $commitHash;
-
-		$lockConfig = new \Pdr\Ppm\LockConfig;
-		$lockConfig->open($this);
-		$lockConfig->save();
+		$this->commitHash = $commitHash;
 	}
 
 	public function install2(){

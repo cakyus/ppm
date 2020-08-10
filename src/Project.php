@@ -19,27 +19,35 @@ namespace Pdr\Ppm;
 
 class Project {
 
+	public $name;
+	public $description;
+
+	public $packages;
+	public $developmentPackages;
+
 	public $path;
+
 	public $config;
+	public $configLock;
 
 	public $vendorDir;
 
 	public function __construct() {
 
-		$projectPath = '.';
+		$this->path = '.';
+		$this->vendorDir = 'vendor';
 
-		$file = $projectPath.'/composer.json';
-		if (is_file($file) == false){
-			\Pdr\Ppm\Logger::warn("composer.json is not found");
-		}
+		$this->packages = array();
+		$this->developmentPackages = array();
 
 		$config = new \Pdr\Ppm\Config;
-		$config->load($file);
+		$config->open($this);
+
+		$configLock = new \Pdr\Ppm\ConfigLock;
+		$configLock->open($this);
 
 		$this->config = $config;
-		$this->path = $projectPath;
-
-		$this->vendorDir = 'vendor';
+		$this->configLock = $configLock;
 	}
 
 	public function getConfig(){
@@ -110,26 +118,48 @@ class Project {
 		return false;
 	}
 
-	/**
-	 * @param $packageText
-	 **/
+	public function createPackage($packageName, $packageRevision, $packageRepositoryUrl) {
 
-	public function addPackage($packageText){
-
-		if (preg_match("/^([^\/]+\/[^:]+):(.+)/", $packageText, $match) == false){
-			\Pdr\Ppm\Logger::error('Parse error');
-		}
-
-		$packageName = $match[1];
-		$packageVersion = $match[2];
+		$packageVersion = $packageRevision;
 
 		$package = new \Pdr\Ppm\Package;
-		$package->open($this, $packageName, $packageVersion);
+		$package->open($this, $packageName, $packageVersion, $packageRepositoryUrl);
+		$package->create();
 
-		if ($package->install() === true){
-			$config = $this->getConfig();
-			$config->data->require->$packageName = $packageVersion;
+		$this->addPackage($package);
+		$this->config->save();
+		$this->configLock->save();
+	}
+
+	public function addPackage($package) {
+		foreach ($this->packages as $packageIndex => $packageItem){
+			if ($package->name == $packageItem->name){
+				unset($this->packages[$packageIndex]);
+			}
 		}
+		$this->packages[] = $package;
+	}
+
+	public function createDelopmentPackage($packageName, $packageRevision, $packageRepositoryUrl) {
+
+		$packageVersion = $packageRevision;
+
+		$package = new \Pdr\Ppm\Package;
+		$package->open($this, $packageName, $packageVersion, $packageRepositoryUrl);
+		$package->create();
+
+		$this->addDevelopmentPackage($package);
+		$this->config->save();
+		$this->configLock->save();
+	}
+
+	public function addDevelopmentPackage($package) {
+		foreach ($this->developmentPackages as $packageIndex => $packageItem){
+			if ($package->name == $packageItem->name){
+				unset($this->developmentPackages[$packageIndex]);
+			}
+		}
+		$this->developmentPackages[] = $package;
 	}
 
 	/**

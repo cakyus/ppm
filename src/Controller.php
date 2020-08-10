@@ -280,69 +280,23 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		} elseif ($option->getCommandCount() == 2) {
 
-			$packageText = $option->getCommand(0);
-			$packageRepository = $option->getCommand(1);
+			$optionDevelopmentPackage = $option->getOption('dev');
+			$packageNameRevision = $option->getCommand(0);
 			$packageRepositoryUrl = $option->getCommand(1);
 
-			if (preg_match("/^([^:]+):(.+)$/", $packageText, $match) == FALSE){
-				throw new \Exception("Invalid packageText");
+			if (preg_match("/^([^:]+):(.+)$/", $packageNameRevision, $match) == FALSE){
+				throw new \Exception("Invalid packageNameRevision '$packageNameRevision'");
 			}
 
 			$packageName = $match[1];
 			$packageRevision = $match[2];
 
 			$project = new \Pdr\Ppm\Project;
-			$package = new \Pdr\Ppm\Package;
-
-			$package->open($project, $packageName, $packageRevision, $packageRepositoryUrl);
-			$package->create();
-
-			$this->initAutoload();
-
-			$config = new \Pdr\Ppm\Git\Config;
-
-			// TODO repository should be a list
-
-			$config->openGlobal();
-			$config->set('ppm.packages.'.$package->name.'.repository', $package->repository);
-
-			$config->openLocal();
-			$config->set('ppm.packages.'.$package->name.'.revision', $package->revision);
-
-			$configName = 'ppm.packages.'.$package->name.'.commit';
-
-			if (empty($package->commit) == TRUE){
-				$configValue = $config->get($configName);
-				if (is_null($configValue) == FALSE){
-					$config->del($configName);
-				}
+			if ($optionDevelopmentPackage == FALSE){
+				$project->createPackage($packageName, $packageRevision, $packageRepositoryUrl);
 			} else {
-				$config->set($configName, $package->commit);
+				$project->createDelopmentPackage($packageName, $packageRevision, $packageRepositoryUrl);
 			}
-
-			$project = new \Pdr\Ppm\Project;
-
-			$composerFile = $project->getPath().'/composer.json';
-
-			if (is_file($composerFile)) {
-
-				$text =  file_get_contents($composerFile);
-				$data =  json_decode($text, TRUE);
-
-				if (isset($data['require']) == FALSE) {
-					$data['require'] = array();
-				}
-
-				// TODO detect revision type
-				// when revision type is branch the add "dev-" into revision
-				$data['require'][$package->name] = 'dev-'.$package->revision;
-				$text = json_encode($data, JSON_PRETTY_PRINT |  JSON_UNESCAPED_SLASHES);
-				file_put_contents($composerFile, $text);
-			}
-
-		} else {
-			trigger_error("Invalid number of arguments. ".$option->getCommandCount(), E_USER_WARNING);
-			return FALSE;
 		}
 	}
 
