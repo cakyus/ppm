@@ -31,32 +31,8 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 	}
 
 	public function commandInit() {
-		$this->initComposer();
+//		$this->initConfig();
 		$this->initAutoload();
-		$this->initConfig();
-	}
-
-	protected function initComposer() {
-
-		$project = new \Pdr\Ppm\Project;
-		$config = new \Pdr\Ppm\Git\Config;
-
-		// import composer configuration
-
-		$config->openLocal();
-		$composerFile = $project->getPath().'/composer.json';
-
-		if (is_file($composerFile)) {
-			$text =  file_get_contents($composerFile);
-			$data =  json_decode($text, TRUE);
-			if (isset($data['require']) == TRUE) {
-				foreach ($data['require'] as $packageName => $packageRevision) {
-					// remove "dev-"
-					$packageRevision = preg_replace("/^dev\-/", '', $packageRevision);
-					$config->set('ppm.packages.'.$packageName.'.revision', $packageRevision);
-				}
-			}
-		}
 	}
 
 	/**
@@ -75,7 +51,11 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		$autoloadText .= "\t\$vendorDir = dirname(__FILE__);\n";
 		$autoloadText .= "\t\$projectDir = dirname(\$vendorDir);\n\n";
 
-		$composerFile = $project->getPath().'/composer.json';
+		$composerFile = $project->getPath().'/ppm.json';
+		if (is_file($composerFile) == FALSE){
+			$composerFile = $project->getPath().'/composer.json';
+		}
+
 		$packageDir = '$projectDir';
 		$autoloadText .= $this->initAutoloadFile($packageDir, $composerFile);
 
@@ -83,8 +63,22 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			mkdir(dirname($autoloadFile));
 		}
 
-		foreach ($project->getPackageNames() as $packageName) {
-			$composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
+		foreach ($project->packages as $package) {
+			$packageName = $package->name;
+			$composerFile = $project->getVendorDir().'/'.$packageName.'/ppm.json';
+			if (is_file($composerFile) == FALSE){
+				$composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
+			}
+			$packageDir = '$vendorDir.\'/'.$packageName.'\'';
+			$autoloadText .= $this->initAutoloadFile($packageDir, $composerFile);
+		}
+
+		foreach ($project->developmentPackages as $package) {
+			$packageName = $package->name;
+			$composerFile = $project->getVendorDir().'/'.$packageName.'/ppm.json';
+			if (is_file($composerFile) == FALSE){
+				$composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
+			}
 			$packageDir = '$vendorDir.\'/'.$packageName.'\'';
 			$autoloadText .= $this->initAutoloadFile($packageDir, $composerFile);
 		}
