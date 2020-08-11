@@ -25,6 +25,8 @@ class Project {
 	public $packages;
 	public $developmentPackages;
 
+	public $autoload;
+
 	public $path;
 
 	public $config;

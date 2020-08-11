@@ -20,6 +20,9 @@ namespace Pdr\Ppm;
 class Config {
 
 	protected $project;
+
+	public $autoload;
+
 	protected $filePath;
 
 	public function __construct() {}
@@ -36,6 +39,7 @@ class Config {
 
 			$this->project->name = $fileData->name;
 			$this->project->description = $fileData->description;
+			$this->autoload = $fileData->autoload;
 
 			$this->project->packages = array();
 			$attributeName = 'require';
