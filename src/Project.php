@@ -77,18 +77,11 @@ class Project {
 	}
 
 	public function getPackages(){
+		return $this->packages;
+	}
 
-		$packages = array();
-
-		foreach (array('require', 'require-dev') as $propertyName) {
-			foreach ($this->config->data->$propertyName as $packageName => $packageVersion){
-				$package = new \Pdr\Ppm\Package;
-				$package->open($this, $packageName, $packageVersion);
-				$packages[$packageName] = $package;
-			}
-		}
-
-		return $packages;
+	public function getDevelopmentPackages(){
+		return $this->developmentPackages;
 	}
 
 	public function getPackageNames() {
