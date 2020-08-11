@@ -67,21 +67,56 @@ class Config {
 		$project->name = $this->project->name;
 		$project->description = $this->project->description;
 
-		$attributePackage = 'require';
-		$project->$attributePackage = new \stdClass;
-		$attributeDevelopmentPackage = 'require-dev';
-		$project->$attributeDevelopmentPackage = new \stdClass;
+		$packages = $this->project->packages;
 
-		foreach ($this->project->packages as $package){
-			$packageName = $package->name;
-			$packageReference = $package->reference;
-			$project->$attributePackage->$packageName = $packageReference;
+		if (count($packages) > 0){
+
+			// sort by package name
+			$packageIndexes = array_keys($packages);
+			foreach ($packageIndexes as $packageIndex){
+				$package = $packages[$packageIndex];
+				$packages[$package->name] = $package;
+				unset($packages[$packageIndex]);
+			}
+
+			ksort($packages);
+
+			$attributePackage = 'require';
+			$project->$attributePackage = new \stdClass;
+
+			foreach ($packages as $package){
+				$packageName = $package->name;
+				$packageReference = $package->reference;
+				$project->$attributePackage->$packageName = $packageReference;
+			}
 		}
 
-		foreach ($this->project->developmentPackages as $package){
-			$packageName = $package->name;
-			$packageReference = $package->reference;
-			$project->$attributeDevelopmentPackage->$packageName = $packageReference;
+		$packages = $this->project->developmentPackages;
+
+		if (count($packages) > 0){
+
+			// sort by package name
+			$packageIndexes = array_keys($packages);
+			foreach ($packageIndexes as $packageIndex){
+				$package = $packages[$packageIndex];
+				$packages[$package->name] = $package;
+				unset($packages[$packageIndex]);
+			}
+
+			ksort($packages);
+
+			$attributePackage = 'require-dev';
+			$project->$attributePackage = new \stdClass;
+
+			foreach ($packages as $package){
+				$packageName = $package->name;
+				$packageReference = $package->reference;
+				$project->$attributePackage->$packageName = $packageReference;
+			}
+		}
+
+		if (empty($this->autoload) == FALSE){
+			$project->autoload = $this->autoload;
 		}
 
 		$fileText = json_encode($project, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -90,6 +125,7 @@ class Config {
 			$fileLines[] = str_replace('    ', '  ', $fileLine);
 		}
 		$fileText = implode("\n", $fileLines);
+
 		file_put_contents($this->filePath, $fileText);
 	}
 }
