@@ -326,12 +326,19 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 	public function commandStatus() {
 
-		$project = new \Pdr\Ppm\Project2;
-		$console = new \Pdr\Ppm\Console2;
+		$project = new \Pdr\Ppm\Project;
 
-		$vendorDir = $project->getVendorDir();
+		$packages = array();
 
-		foreach ($project->getPackages() as $package) {
+		foreach ($project->getPackages() as $package){
+			$packages[] = $package;
+		}
+
+		foreach ($project->getDevelopmentPackages() as $package){
+			$packages[] = $package;
+		}
+
+		foreach ($packages as $package) {
 
 			if ($package->name == 'php') {
 				continue;
@@ -342,7 +349,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 			$localStatus = '?'; // Unknown
 
-			$packageDir = $vendorDir.'/'.$package->name;
+			$packageDir = $project->getVendorDir().'/'.$package->name;
 			if (is_dir($packageDir == FALSE)){
 				$lockStatus = '?';
 				$remoteStatus = '?';
@@ -363,7 +370,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 				.' for-each-ref --format "%(objectname)" refs/heads/'.$package->revision
 				;
 
-			$gitCommit = $console->text($commandText);
+			$gitCommit = \Pdr\Ppm\Console::text($commandText);
 
 			if (strlen($gitCommit) == 0){
 				$lockStatus = '?';
@@ -372,7 +379,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			}
 
 			$commandText = $gitCommand.' status --short';
-			$gitStatus = $console->text($commandText);
+			$gitStatus = \Pdr\Ppm\Console::text($commandText);
 
 			if (strlen($gitStatus) == 0){
 				$localStatus = ' ';
@@ -405,7 +412,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 					.' --format "%(objectname)"'
 					.' refs/remotes/origin/'.$package->revision
 					;
-				$remoteCommit = $console->text($commandText);
+				$remoteCommit = \Pdr\Ppm\Console::text($commandText);
 
 				if ($remoteCommit == $gitCommit){
 					$remoteStatus = ' ';
