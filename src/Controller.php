@@ -41,6 +41,8 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 	protected function initAutoload(){
 
+		fwrite(STDERR, "Generate autoload file ..\n");
+
 		$project = new \Pdr\Ppm\Project;
 
 		$autoloadFile = $project->getVendorDir().'/autoload.php';
@@ -104,6 +106,9 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		$text =  file_get_contents($composerFile);
 		$data =  json_decode($text, TRUE);
+		if (json_last_error() != \JSON_ERROR_NONE){
+			throw new \Exception("JSON Parse Error.\n".json_last_error_msg());
+		}
 
 		if (isset($data['autoload']) == FALSE) {
 			return $autoloadText;
