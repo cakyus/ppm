@@ -62,7 +62,8 @@ class ConfigLock {
 	public function save() {
 
 		$project = new \stdClass;
-		$project->packages = array();
+
+		$packages = array();
 
 		foreach ($this->project->packages as $package){
 
@@ -74,7 +75,7 @@ class ConfigLock {
 			$packageDataSource->reference = $package->commitHash;
 			$packageData->source = $packageDataSource;
 
-			$project->packages[] = $packageData;
+			$packages[$package->name] = $packageData;
 		}
 
 		foreach ($this->project->developmentPackages as $package){
@@ -87,8 +88,14 @@ class ConfigLock {
 			$packageDataSource->reference = $package->commitHash;
 			$packageData->source = $packageDataSource;
 
-			$project->packages[] = $packageData;
+			$packages[$package->name] = $packageData;
 		}
+
+		// sort packages
+		ksort($packages);
+		$packages = array_values($packages);
+
+		$project->packages = $packages;
 
 		$filePath = $this->project->getPath().'/ppm.lock.json';
 		$fileText = json_encode($project, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
