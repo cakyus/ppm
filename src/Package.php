@@ -25,8 +25,10 @@ class Package {
 
 	// git reference
 	public $reference; // eg. master, 1.*
+
 	// git branch or tag
 	public $version; // eg. master, 1.0.10
+
 	// git commit hash
 	public $commitHash;
 
@@ -47,6 +49,8 @@ class Package {
 		$this->repositoryUrl = $packageRepositoryUrl;
 		$this->path = $project->getVendorDir().'/'.$packageName;
 
+		// repositoryUrl
+
 		if (is_dir($this->path)){
 			if (is_null($packageRepositoryUrl) == TRUE){
 				$gitCommand = 'git'
@@ -58,6 +62,20 @@ class Package {
 				$packageRepositoryUrl = trim($packageRepositoryUrl);
 				$this->repositoryUrl = $packageRepositoryUrl;
 			}
+		}
+
+		// commitHash
+		if (is_dir($this->path) && is_dir($this->path.'/.git')){
+
+			$gitCommand = 'git'
+				.' --git-dir '.$this->path.'/.git'
+				.' --work-tree '.$this->path
+				;
+
+			$commandText = $gitCommand.' log -n 1 --format=%H';
+			$packageCommitHash = \Pdr\Ppm\Console::text($commandText);
+			$packageCommitHash = trim($packageCommitHash);
+			$this->commitHash = $packageCommitHash;
 		}
 	}
 
@@ -155,7 +173,7 @@ class Package {
 	}
 
 	/**
-	 * Get git reference, ie. branchName, tagName, or commitHash
+	 * Get Version
 	 **/
 
 	public function getVersion() {
@@ -217,5 +235,45 @@ class Package {
 
 	public function getProject() {
 		return $this->project;
+	}
+
+	/**
+	 * Get Git Command
+	 *
+	 * @return string git command
+	 **/
+
+	protected function getGitCommand() {
+
+		if (is_dir($this->path) == FALSE){
+			throw new \Exception("Package workTree not exits. '{$this->path}'");
+		}
+
+		if (is_dir($this->path.'/.git') == FALSE){
+			throw new \Exception("Package gitDir not exits. '{$this->path}/.git'");
+		}
+
+		return 'git'
+			.' --git-dir '.$this->path.'/.git'
+			.' --work-tree '.$this->path
+			;
+	}
+
+	public function update() {
+
+		fwrite(STDOUT, "Update {$this->name} {$this->repositoryUrl} ..\n");
+
+		$gitCommand = $this->getGitCommand();
+
+		$commandText = $gitCommand.' fetch origin '.escapeshellarg($this->version);
+		\Pdr\Ppm\Console::exec($commandText);
+
+		$commandText = $gitCommand.' status --short';
+		$commandLine = \Pdr\Ppm\Console::line($commandText);
+		if (\count($commandLine) == 0){
+			// no local changes
+			$commandText = $gitCommand.' merge --ff-only origin/'.$this->version;
+			\Pdr\Ppm\Console::exec($commandText);
+		}
 	}
 }

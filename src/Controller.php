@@ -303,21 +303,14 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		$project = new \Pdr\Ppm\Project;
 
 		foreach ($project->getPackages() as $package){
-
-			$packageVersion = $package->getVersion();
-
-			echo "{$package->name} $packageVersion\n";
-
-			if ( ( $repository = $package->getRepository() ) === false ){
-				continue;
-			}
-
-			if ( ( $remote = $repository->getRemote('origin') ) === false ){
-				continue;
-			}
-
-			$remote->fetch($packageVersion);
+			$package->update();
 		}
+
+		foreach ($project->getDevelopmentPackages() as $package){
+			$package->update();
+		}
+
+		$project->configLock->save();
 	}
 
 	/**
