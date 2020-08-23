@@ -30,6 +30,7 @@ class Package {
 	public $version; // eg. master, 1.0.10
 
 	// git commit hash
+
 	public $commitHash;
 
 	public $repositoryUrl;

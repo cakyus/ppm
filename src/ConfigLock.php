@@ -20,9 +20,17 @@ namespace Pdr\Ppm;
 /**
  * # Data Structure
  *
- *   packages
- *     + packageName
- *       + packageRevision: commitHash
+ *   "packages": [
+ *     {
+ *         "name": <packageName>
+ *       , "version": <packageVersion>
+ *       , "source": {
+ *           "type": "cvs"
+ *         , "reference": <packageCommitHash>
+ *       }
+ *     }
+ *     , ..
+ *   ]
  **/
 
 class ConfigLock {
@@ -30,36 +38,21 @@ class ConfigLock {
 	protected $project;
 	protected $filePath;
 
+	public $packages;
+
+	public function __construct() {
+		$this->packages = array();
+	}
+
 	public function open(\Pdr\Ppm\Project $project){
 
 		$this->project = $project;
 		$this->filePath = $this->project->getPath().'/ppm.lock.json';
 
 		if (is_file($this->filePath)){
-
 			$fileText = file_get_contents($this->filePath);
 			$fileData = json_decode($fileText);
-
-			foreach ($fileData->packages as $packageData){
-
-				foreach ($this->project->packages as $package){
-					if ($package->name == $packageData->name){
-						$package->version = $packageData->version;
-						if (is_null($packageData->source->reference) == FALSE){
-							$package->commitHash = $packageData->source->reference;
-						}
-					}
-				}
-
-				foreach ($this->project->developmentPackages as $package){
-					if ($package->name == $packageData->name){
-						$package->version = $packageData->version;
-						if (is_null($packageData->source->reference) == FALSE){
-							$package->commitHash = $packageData->source->reference;
-						}
-					}
-				}
-			}
+			$this->packages = $fileData->packages;
 		}
 	}
 
