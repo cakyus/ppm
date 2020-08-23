@@ -78,9 +78,17 @@ class Project {
 		return $vendorDir;
 	}
 
+	/**
+	 * @return array \Pdr\Ppm\Package
+	 **/
+
 	public function getPackages(){
 		return $this->packages;
 	}
+
+	/**
+	 * @return array \Pdr\Ppm\Package
+	 **/
 
 	public function getDevelopmentPackages(){
 		return $this->developmentPackages;
