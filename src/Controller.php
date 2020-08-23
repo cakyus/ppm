@@ -393,66 +393,6 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			}
 
 			fwrite(STDOUT, $localStatus.$lockStatus.$remoteStatus.' '.$package->name."\n");
-
-			continue;
-
-			$gitCommit = \Pdr\Ppm\Console::text($commandText);
-
-			if (strlen($gitCommit) == 0){
-				$lockStatus = '?';
-				$remoteStatus = '?';
-				continue;
-			}
-
-			$commandText = $gitCommand.' status --short';
-			$gitStatus = \Pdr\Ppm\Console::text($commandText);
-
-			if (strlen($gitStatus) == 0){
-				$localStatus = ' ';
-			} else {
-				$localStatus = 'M';
-			}
-
-			// lock status
-			// compare repository (HEAD) with composer lock file
-
-			$lockStatus = '?'; // Unknown
-
-			if ($localStatus == ' ' || $localStatus == 'M') {
-				if ($package->commit == $gitCommit){
-					$lockStatus = ' ';
-				} else {
-					$lockStatus = 'M';
-				}
-			}
-
-			// remote status ( query from cache )
-			// compare repository remote with composer lock file
-
-			$remoteStatus = '?'; // Unknown
-
-			if ($lockStatus == ' ' || $lockStatus == 'M'){
-
-				$commandText = $gitCommand
-					.' for-each-ref'
-					.' --format "%(objectname)"'
-					.' refs/remotes/origin/'.$package->revision
-					;
-				$remoteCommit = \Pdr\Ppm\Console::text($commandText);
-
-				if ($remoteCommit == $gitCommit){
-					$remoteStatus = ' ';
-				} else {
-					$remoteStatus = 'M';
-				}
-			}
-
-			if (	$localStatus == ' '
-				&&	$lockStatus == ' '
-				&&	$remoteStatus == ' '
-				){
-				continue;
-			}
 		}
 	}
 
