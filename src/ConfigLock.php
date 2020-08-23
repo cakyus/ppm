@@ -45,14 +45,18 @@ class ConfigLock {
 				foreach ($this->project->packages as $package){
 					if ($package->name == $packageData->name){
 						$package->version = $packageData->version;
-						$package->commitHash = $packageData->source->reference;
+						if (is_null($packageData->source->reference) == FALSE){
+							$package->commitHash = $packageData->source->reference;
+						}
 					}
 				}
 
 				foreach ($this->project->developmentPackages as $package){
 					if ($package->name == $packageData->name){
 						$package->version = $packageData->version;
-						$package->commitHash = $packageData->source->reference;
+						if (is_null($packageData->source->reference) == FALSE){
+							$package->commitHash = $packageData->source->reference;
+						}
 					}
 				}
 			}
