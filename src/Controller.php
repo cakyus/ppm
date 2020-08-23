@@ -392,6 +392,10 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 				}
 			}
 
+			if ($localStatus == ' ' && $lockStatus == ' ' && $remoteStatus == ' '){
+				continue;
+			}
+
 			fwrite(STDOUT, $localStatus.$lockStatus.$remoteStatus.' '.$package->name."\n");
 		}
 	}
