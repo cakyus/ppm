@@ -24,6 +24,7 @@ class Project {
 
 	public $packages;
 	public $developmentPackages;
+	public $dependencyPackages;
 
 	public $autoload;
 
@@ -41,6 +42,7 @@ class Project {
 
 		$this->packages = array();
 		$this->developmentPackages = array();
+		$this->dependencyPackages = array();
 
 		$config = new \Pdr\Ppm\Config;
 		$this->config = $config;
@@ -177,6 +179,94 @@ class Project {
 		$repository = new \Pdr\Ppm\Repository;
 		$repository->open($this->path.'/.git', $this->path);
 		return $repository;
+	}
+
+	/**
+	 * Update $HOME/.config/ppm/packages.json
+	 *
+	 * Schema
+	 *
+	 *   [
+	 *     {
+	 *         "name": <packageName>
+	 *       , "repositories": [
+	 *         {
+	 *            "url": <packageRepositoryUrl>
+	 *         }
+	 *       ]
+	 *     }
+	 *   ]
+	 *
+	 **/
+
+	public function updateConfigGlobalPackage() {
+
+		if (is_dir($_SERVER['HOME'].'/.config') == FALSE){
+			throw new \Exception("Folder not found '\$HOME/.config'");
+		}
+
+		if (is_dir($_SERVER['HOME'].'/.config/ppm') == FALSE){
+			mkdir($_SERVER['HOME'].'/.config/ppm');
+		}
+
+		$filePath = $_SERVER['HOME'].'/.config/ppm/packages.json';
+		$configPackages = array();
+
+		if (is_file($filePath)){
+			$fileText = file_get_contents($filePath);
+			$configPackages = json_decode($fileText);
+		}
+
+		foreach ($this->getPackages() as $package){
+
+			$configPackageFound = FALSE;
+			$configPackageRepositoryFound = FALSE;
+
+			foreach ($configPackages as $configPackage){
+				if ($package->name == $configPackage->name){
+					$configPackageFound = TRUE;
+					foreach ($configPackage->repositories as $configPackageRepository){
+						if ($package->repositoryUrl == $configPackageRepository->url){
+							$configPackageRepositoryFound = TRUE;
+							break;
+						}
+					}
+					break;
+				}
+			}
+
+			if ($configPackageFound == FALSE){
+
+				$configPackage = new \stdClass;
+				$configRespository = new \stdClass;
+
+				$configPackage->name = $package->name;
+				$configRespository->url = $package->repositoryUrl;
+				$configPackage->repositories[] = $configRespository;
+
+				$configPackages[] = $configPackage;
+
+			} elseif ($configPackageRepositoryFound == FALSE){
+
+				foreach ($configPackages as $configPackage){
+					if ($package->name == $configPackage->name){
+						$configRespository = new \stdClass;
+						$configRespository->url = $package->repositoryUrl;
+						$configPackage->repositories[] = $configRespository;
+						break;
+					}
+				}
+
+			}
+		}
+
+		$fileText = json_encode($configPackages, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+		$fileLines = array();
+		foreach (explode("\n", $fileText) as $fileLine){
+			$fileLines[] = str_replace('    ', '  ', $fileLine);
+		}
+		$fileText = implode("\n", $fileLines);
+		file_put_contents($filePath, $fileText);
 	}
 
 }
