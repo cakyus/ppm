@@ -237,17 +237,17 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 	/**
 	 * Install package
 	 * @usage install
-	 * @usage install <packageName>:<packageVersion>
-	 * @usage install <packageName>:<packageVersion> <packageUrl>
+	 * @usage install <packageName>:<packageReference>
+	 * @usage install <packageName>:<packageReference> <packageRepositoryUrl>
 	 **/
 
 	public function commandInstall(){
 
+		$project = new \Pdr\Ppm\Project;
 		$option = new \Pdr\Ppm\Cli\Option;
 
 		if ($option->getCommandCount() == 0){
 
-			$project = new \Pdr\Ppm\Project;
 			$lockConfig = $project->getLockConfig();
 
 			foreach ($project->getPackages() as $package){
@@ -266,16 +266,48 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		} elseif ($option->getCommandCount() == 1) {
 
-			$packageText = $option->getCommand(0);
+			$optionDevelopmentPackage = $option->getOption('dev');
+			$packageNameReference = $option->getCommand(0);
+			if (preg_match("/^([^:]+):(.+)$/", $packageNameReference, $match) == FALSE){
+				throw new \Exception("Invalid packageNameReference '$packageNameReference'");
+			}
 
-			$project = new \Pdr\Ppm\Project;
-			$project->addPackage($packageText);
+			$packageName = $match[1];
+			$packageReference = $match[2];
+			$packageRepositoryUrl = NULL;
 
-			$config = $project->getConfig();
-			$config->save();
+			// resolve packageRepositoryUrl
 
-			// generate autoload
-			$this->commandSave();
+			$packageRepositoryUrlItem = array();
+			foreach ($project->configPackage->packages as $configPackage){
+				if ($configPackage->name == $packageName){
+					foreach ($configPackage->repositories as $configPackageRepository){
+						$packageRepositoryUrlItem[] = $configPackageRepository->url;
+					}
+				}
+			}
+
+			if (count($packageRepositoryUrlItem) == 0){
+				throw new \Exception("Can not resolve packageRepositoryUrl for $packageName");
+			} elseif (count($packageRepositoryUrlItem) > 1){
+				fwrite(STDERR, "Package have multiple repository url\n");
+				foreach ($packageRepositoryUrlItem as $packageRepositoryUrl){
+					fwrite(STDERR, "$packageRepositoryUrl\n");
+				}
+				return FALSE;
+			} else {
+				$packageRepositoryUrl = $packageRepositoryUrlItem[0];
+			}
+
+			if ($optionDevelopmentPackage == FALSE){
+				$project->createPackage($packageName, $packageReference, $packageRepositoryUrl);
+			} else {
+				$project->createDelopmentPackage($packageName, $packageReference, $packageRepositoryUrl);
+			}
+
+			$project->configLock->save();
+			$project->configPackage->save();
+			$this->initAutoload();
 
 		} elseif ($option->getCommandCount() == 2) {
 
@@ -290,7 +322,6 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			$packageName = $match[1];
 			$packageRevision = $match[2];
 
-			$project = new \Pdr\Ppm\Project;
 			if ($optionDevelopmentPackage == FALSE){
 				$project->createPackage($packageName, $packageRevision, $packageRepositoryUrl);
 			} else {

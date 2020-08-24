@@ -41,16 +41,11 @@ class Package {
 	public $packages;
 
 	protected $project;
+	protected $filePath;
 
 	public function __construct() {
+
 		$this->packages = array();
-	}
-
-	public function open(\Pdr\Ppm\Project $project) {
-		$this->project = $project;
-	}
-
-	public function save() {
 
 		if (is_dir($_SERVER['HOME'].'/.config') == FALSE){
 			throw new \Exception("Folder not found '\$HOME/.config'");
@@ -60,20 +55,26 @@ class Package {
 			mkdir($_SERVER['HOME'].'/.config/ppm');
 		}
 
-		$filePath = $_SERVER['HOME'].'/.config/ppm/packages.json';
-		$configPackages = array();
+		$this->filePath = $_SERVER['HOME'].'/.config/ppm/packages.json';
 
-		if (is_file($filePath)){
-			$fileText = file_get_contents($filePath);
-			$configPackages = json_decode($fileText);
+		if (is_file($this->filePath)){
+			$fileText = file_get_contents($this->filePath);
+			$this->packages = json_decode($fileText);
 		}
+	}
+
+	public function open(\Pdr\Ppm\Project $project) {
+		$this->project = $project;
+	}
+
+	public function save() {
 
 		foreach ($this->project->getPackages() as $package){
 
 			$configPackageFound = FALSE;
 			$configPackageRepositoryFound = FALSE;
 
-			foreach ($configPackages as $configPackage){
+			foreach ($this->packages as $configPackage){
 				if ($package->name == $configPackage->name){
 					$configPackageFound = TRUE;
 					foreach ($configPackage->repositories as $configPackageRepository){
@@ -95,11 +96,11 @@ class Package {
 				$configRespository->url = $package->repositoryUrl;
 				$configPackage->repositories[] = $configRespository;
 
-				$configPackages[] = $configPackage;
+				$this->packages[] = $configPackage;
 
 			} elseif ($configPackageRepositoryFound == FALSE){
 
-				foreach ($configPackages as $configPackage){
+				foreach ($this->packages as $configPackage){
 					if ($package->name == $configPackage->name){
 						$configRespository = new \stdClass;
 						$configRespository->url = $package->repositoryUrl;
@@ -111,12 +112,12 @@ class Package {
 			}
 		}
 
-		$fileText = json_encode($configPackages, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+		$fileText = json_encode($this->packages, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 		$fileLines = array();
 		foreach (explode("\n", $fileText) as $fileLine){
 			$fileLines[] = str_replace('    ', '  ', $fileLine);
 		}
 		$fileText = implode("\n", $fileLines);
-		file_put_contents($filePath, $fileText);
+		file_put_contents($this->filePath, $fileText);
 	}
 }
