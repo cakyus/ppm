@@ -499,47 +499,8 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		}
 	}
 
-	/**
-	 * Perform unit test
-	 **/
-
-	public function commandTest($option = null) {
-
-		// check PHP syntax
-
-		if (is_null($option)){
-			$option = new \stdClass;
-			$testFile = sys_get_temp_dir().'/ppm.test.'.md5(getcwd());
-			$option->testDir = getcwd();
-			$option->testDate = 0;
-			if (is_file($testFile)){
-				$option->testDate = filemtime($testFile);
-			}
-			touch($testFile);
-		}
-
-		if ($dh = opendir($option->testDir)){
-			while (($file = readdir($dh)) !== false){
-				if ($file == '.' || $file == '..'){
-					continue;
-				}
-				$path = $option->testDir.'/'.$file;
-				if (is_dir($path)){
-					$iOption = new \stdClass;
-					$iOption->testDir = $path;
-					$iOption->testDate = $option->testDate;
-					$this->commandTest($iOption);
-				} elseif (substr($path, -4) == '.php') {
-					if (filemtime($path) > $option->testDate){
-						passthru('php -l '.escapeshellarg($path).' >/dev/null 2>&1', $exit);
-						if ($exit){
-							echo "Syntax-Error: $path\n"; exit(1);
-						}
-					}
-				}
-			}
-			closedir($dh);
-		}
+	public function commandTest() {
+		$config = new \Pdr\Ppm\Config\Package;
 	}
 
 	/**
