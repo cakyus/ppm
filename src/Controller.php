@@ -316,7 +316,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		}
 
 		$project->configLock->save();
-		$project->updateConfigGlobalPackage();
+		$project->configPackage->save();
 		$this->initAutoload();
 	}
 
