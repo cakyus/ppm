@@ -30,8 +30,26 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		}
 	}
 
+	public function execute() {
+
+		if ($_SERVER['argc'] == 1){
+			$this->commandHelp();
+			exit(0);
+		}
+
+		$arguments = $_SERVER['argv'];
+		array_shift($arguments);
+		$commandText = array_shift($arguments);
+		$commandName = 'command'.ucfirst($commandText);
+
+		if (method_exists($this, $commandName) == false){
+			return $this->commandExec($commandText);
+		}
+
+		call_user_func_array(array($this, $commandName), $arguments);
+	}
+
 	public function commandInit() {
-//		$this->initConfig();
 		$this->initAutoload();
 	}
 
@@ -540,61 +558,34 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 	 * Execute composer scripts
 	 **/
 
-	public function commandExec($scriptName, $workingDirectory=null) {
+	public function commandExec($commandText) {
 
 		$project = new \Pdr\Ppm\Project;
-		$config = $project->getConfig();
-		$currentDirectory = getcwd();
 
-		if (empty($config->data->scripts)){
-			return false;
+		if (empty($project->config->scripts)){
+			return FALSE;
 		}
 
-		foreach ($config->data->scripts as $eventName => $scripts){
-			if ($eventName != $scriptName){
-				continue;
-			}
-			foreach ($scripts as $command){
-				\Pdr\Ppm\Logger::debug("Executing [$scriptName] > $command ..");
-				if (is_null($workingDirectory) == false){
-					chdir($workingDirectory);
-				}
-				passthru($command, $exitCode);
-				if (is_null($workingDirectory) == false){
-					chdir($currentDirectory);
-				}
-				if ($exitCode !== 0){
-					return false;
-				}
-			}
-		}
+		foreach ($project->config->scripts as $scriptName => $script){
 
-		\Pdr\Ppm\Logger::debug("Execute scripts done");
-		return true;
-	}
-
-	/**
-	 * Execute command on each package
-	 **/
-
-	public function commandEach($command) {
-
-		$project = new \Pdr\Ppm\Project;
-		$projectRealPath = $project->getRealPath();
-
-		foreach ($project->getPackages() as $package){
-
-			chdir($projectRealPath);
-			if ( ( $repository = $package->getRepository() ) === false ){
-				\Pdr\Ppm\Logger::warn("[".$package->name."] repository not found.");
+			if ($scriptName != $commandText){
 				continue;
 			}
 
-			$packagePath = $package->getPath();
-			chdir($packagePath);
-
-			\Pdr\Ppm\Logger::debug("[{$package->name}] > $command");
-			passthru($command);
+			if (is_array($script)){
+				foreach ($script as $scriptItem){
+					$this->commandExec($scriptItem);
+				}
+			} elseif (preg_match("/^([A-Z][^:]+)::([a-z].+)$/", $script, $match)){
+				include_once($project->getVendorDir().'/autoload.php');
+				trigger_error("Executing scripts $scriptName $script ..", E_USER_NOTICE);
+				$className = $match[1];
+				$functionName = $match[2];
+				call_user_func(array($className, $functionName));
+			} else {
+				trigger_error("Executing $scriptName $script ..", E_USER_NOTICE);
+				passthru($script);
+			}
 		}
 	}
 

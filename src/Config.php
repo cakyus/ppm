@@ -23,6 +23,8 @@ class Config {
 
 	public $autoload;
 
+	public $scripts;
+
 	protected $filePath;
 
 	public function __construct() {}
@@ -31,6 +33,7 @@ class Config {
 
 		$this->project = $project;
 		$this->filePath = $this->project->getPath().'/ppm.json';
+		$this->scripts = array();
 
 		if (is_file($this->filePath)){
 
@@ -40,6 +43,7 @@ class Config {
 			$this->project->name = $fileData->name;
 			$this->project->description = $fileData->description;
 			$this->autoload = $fileData->autoload;
+			$this->scripts = $fileData->scripts;
 
 			$this->project->packages = array();
 			$attributeName = 'require';
