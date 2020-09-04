@@ -550,10 +550,6 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		}
 	}
 
-	public function commandTest() {
-		$config = new \Pdr\Ppm\Config\Package;
-	}
-
 	/**
 	 * Execute composer scripts
 	 **/
