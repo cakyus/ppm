@@ -49,10 +49,8 @@ class Config {
 				, 'license'
 				) as $attributeName => $attributeValue){
 
-				$attributeValue = $fileData->$attributeName;
-
-				if (empty($attributeValue) == FALSE){
-					$this->$attributeName = $attributeValue;
+				if (isset($fileData->$attributeName)){
+					$this->$attributeName = $fileData->$attributeName;
 				} else {
 					$this->$attributeName = new \stdClass;
 				}
