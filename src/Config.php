@@ -24,6 +24,7 @@ class Config {
 	public $autoload;
 
 	public $scripts;
+	public $license;
 
 	protected $filePath;
 
@@ -42,8 +43,20 @@ class Config {
 
 			$this->project->name = $fileData->name;
 			$this->project->description = $fileData->description;
-			$this->autoload = $fileData->autoload;
-			$this->scripts = $fileData->scripts;
+
+			foreach (array(
+				'scripts'
+				, 'license'
+				) as $attributeName => $attributeValue){
+
+				$attributeValue = $fileData->$attributeName;
+
+				if (empty($attributeValue) == FALSE){
+					$this->$attributeName = $attributeValue;
+				} else {
+					$this->$attributeName = new \stdClass;
+				}
+			}
 
 			$this->project->packages = array();
 			$attributeName = 'require';
