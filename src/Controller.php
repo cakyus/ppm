@@ -24,10 +24,7 @@ namespace Pdr\Ppm;
 class Controller extends \Pdr\Ppm\Cli\Controller {
 
 	public function __construct() {
-
-		if (PHP_SAPI !== 'cli'){
-			throw new \Exception("Invalid SAPI");
-		}
+		parent::__construct();
 	}
 
 	public function execute() {

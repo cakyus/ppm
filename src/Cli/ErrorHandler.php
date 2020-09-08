@@ -19,36 +19,75 @@ namespace Pdr\Ppm\Cli;
 
 class ErrorHandler {
 
-	public function execute(){
-		set_error_handler(array('\\Pdr\\Ppm\\Cli\\ErrorHandler', 'writeError'));
+	public static function register() {
+		register_shutdown_function(array('Pdr\Ppm\Cli\ErrorHandler', 'handleShutdown'));
+		set_error_handler(array('Pdr\Ppm\Cli\ErrorHandler', 'handleError'));
 	}
 
-	public static function writeError($number, $message, $file, $line){
+	public static function handleError($errno, $errstr, $errfile, $errline) {
 
-		if (!(error_reporting() & $number)) {
-			// This error code is not included in error_reporting, so let it fall
-			// through to the standard PHP error handler
-			return false;
+		$errmap = array(
+			E_ERROR => 'ERROR'
+			, E_WARNING => 'WARNING'
+			, E_PARSE => 'PARSE'
+			, E_NOTICE => 'NOTICE'
+			, E_CORE_ERROR => 'CORE ERROR'
+			, E_CORE_WARNING => 'CORE WARNING'
+			, E_COMPILE_ERROR => 'COMPILE ERROR'
+			, E_COMPILE_WARNING => 'COMPILE WARNING'
+			, E_USER_ERROR => 'USER ERROR'
+			, E_USER_WARNING => 'USER WARNING'
+			, E_USER_NOTICE => 'USER NOTICE'
+			, E_STRICT => 'STRICT'
+			, E_RECOVERABLE_ERROR => 'RECOVERABLE ERROR'
+			, E_DEPRECATED => 'DEPRECATED'
+			, E_USER_DEPRECATED => 'USER DEPRECATED'
+		);
+
+    if (!(error_reporting() & $errno)) {
+        // This error code is not included in error_reporting, so let it fall
+        // through to the standard PHP error handler
+        return FALSE;
+    }
+
+		$strfile = str_replace(FCPATH, '', $errfile);
+		$strfile = ltrim($strfile, '/');
+		$strpath = $strfile.':'.$errline;
+
+		$trace = debug_backtrace();
+		if (isset($trace[1]['class']) && isset($trace[1]['function'])){
+			$strpath = $trace[1]['class'].'.'.$trace[1]['function'].':'.$errline;
 		}
 
-		$file = str_replace(FCPATH, '', $file);
-		$file = ltrim($file, '/');
+		// Exit on all error
 
-		$location = $file.':'.$line;
-		$debug = debug_backtrace();
-		if (isset($debug[2]['class']) && isset($debug[2]['function']) && isset($debug[1]['line'])){
-			$location = $debug[2]['class'].'.'.$debug[2]['function'].':'.$debug[1]['line'];
+		foreach ($errmap as $errmapno => $errmapstr){
+			if ($errno == $errmapno){
+				fwrite(STDERR, date('H:i:s').' '.$errmapstr.' '.$errstr.' '.$strpath."\n");
+			}
 		}
 
-		if ($number == E_USER_ERROR){
-			fwrite(STDERR, date('H:i:s').' ERROR '.$message.' '.$location."\n");
-		} elseif ($number == E_USER_WARNING){
-			fwrite(STDERR, date('H:i:s').' WARNING '.$message.' '.$location."\n");
-		} elseif ($number == E_USER_NOTICE){
-			fwrite(STDERR, date('H:i:s').' NOTICE '.$message.' '.$location."\n");
-		}
+    // Don't execute PHP internal error handler
+     return TRUE;
+	}
 
-		// Don't execute PHP internal error handler
-		return true;
+
+	public static function handleShutdown() {
+
+		// Returns an associative array describing the last error with keys
+		// "type", "message", "file" and "line".
+
+		$error = error_get_last();
+
+		// Check if it's a core/fatal error. Otherwise, it's a normal shutdown
+		if($error !== NULL && $error['type'] === E_ERROR) {
+
+			$strfile = str_replace(FCPATH, '', $error['file']);
+			$strfile = ltrim($strfile, '/');
+			$strpath = $strfile.':'.$error['line'];
+
+			fwrite(STDERR, date('H:i:s').' ERROR '.$error['message'].' '.$strpath."\n");
+			exit(1);
+		}
 	}
 }

@@ -28,6 +28,9 @@ class Controller {
 		if (PHP_SAPI !== 'cli'){
 			throw new \Exception("Invalid SAPI");
 		}
+
+		\Pdr\Ppm\Cli\ErrorHandler::register();
+		\Pdr\Ppm\Cli\ExceptionHandler::register();
 	}
 
 	public function execute() {
