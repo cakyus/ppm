@@ -58,18 +58,26 @@ class Config {
 
 			$this->project->packages = array();
 			$attributeName = 'require';
-			foreach ($fileData->$attributeName as $packageDataName => $packageDataReference){
-				$package = new \Pdr\Ppm\Package;
-				$package->open($project, $packageDataName, $packageDataReference, NULL);
-				$this->project->packages[] = $package;
+			if (isset($fileData->$attributeName) == TRUE) {
+				foreach ($fileData->$attributeName as $packageDataName => $packageDataReference){
+					$package = new \Pdr\Ppm\Package;
+					$package->open($project, $packageDataName, $packageDataReference, NULL);
+					$this->project->packages[] = $package;
+				}
+			} else {
+				$fileData->$attributeName = new \stdClass;
 			}
 
 			$this->project->developmentPackages = array();
 			$attributeName = 'require-dev';
-			foreach ($fileData->$attributeName as $packageDataName => $packageDataReference){
-				$package = new \Pdr\Ppm\Package;
-				$package->open($project, $packageDataName, $packageDataReference, NULL);
-				$this->project->developmentPackages[] = $package;
+			if (isset($fileData->$attributeName) == TRUE) {
+				foreach ($fileData->$attributeName as $packageDataName => $packageDataReference){
+					$package = new \Pdr\Ppm\Package;
+					$package->open($project, $packageDataName, $packageDataReference, NULL);
+					$this->project->developmentPackages[] = $package;
+				}
+			} else {
+				$fileData->$attributeName = new \stdClass;
 			}
 		}
 
