@@ -50,7 +50,16 @@ class ErrorHandler {
         return FALSE;
     }
 
-		$strfile = str_replace(FCPATH, '', $errfile);
+		if (isset($_ENV['FCPATH']) == TRUE) {
+			$FCPATH = $_ENV['FCPATH'];
+			if ($FCPATH == '.') {
+				$FCPATH = getcwd();
+			}
+		} else {
+			$FCPATH = FCPATH;
+		}
+
+		$strfile = str_replace($FCPATH, '', $errfile);
 		$strfile = ltrim($strfile, '/');
 		$strpath = $strfile.':'.$errline;
 

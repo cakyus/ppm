@@ -555,7 +555,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		$project = new \Pdr\Ppm\Project;
 
-		if (empty($project->config->scripts)){
+		if (empty($project->config->scripts) == TRUE){
 			fwrite(STDERR, "Script not found\n");
 			return FALSE;
 		}
@@ -574,12 +574,14 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 				}
 			} elseif (preg_match("/^([A-Z][^:]+)::([a-z].+)$/", $script, $match)){
 				include_once($project->getVendorDir().'/autoload.php');
-				trigger_error("Executing scripts $scriptName $script ..", E_USER_NOTICE);
+				fwrite(STDERR, "> $scriptName => $script\n", E_USER_NOTICE);
 				$className = $match[1];
 				$functionName = $match[2];
+				$_ENV['FCPATH'] = $project->getPath();
 				call_user_func(array($className, $functionName));
+				unset($_ENV['FCPATH']);
 			} else {
-				trigger_error("Executing $scriptName $script ..", E_USER_NOTICE);
+				fwrite(STDERR, "> $scriptName => $script\n", E_USER_NOTICE);
 				passthru($script);
 			}
 
