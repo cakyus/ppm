@@ -47,9 +47,9 @@ class Config {
 			foreach (array(
 				'scripts'
 				, 'license'
-				) as $attributeName => $attributeValue){
+				) as $attributeName){
 
-				if (isset($fileData->$attributeName)){
+				if (isset($fileData->$attributeName) == TRUE){
 					$this->$attributeName = $fileData->$attributeName;
 				} else {
 					$this->$attributeName = new \stdClass;
