@@ -556,8 +556,11 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		$project = new \Pdr\Ppm\Project;
 
 		if (empty($project->config->scripts)){
+			fwrite(STDERR, "Script not found\n");
 			return FALSE;
 		}
+
+		$commandFound = FALSE;
 
 		foreach ($project->config->scripts as $scriptName => $script){
 
@@ -579,7 +582,14 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 				trigger_error("Executing $scriptName $script ..", E_USER_NOTICE);
 				passthru($script);
 			}
+
+			$commandFound = TRUE;
 		}
+
+		if ($commandFound == FALSE) {
+			fwrite(STDERR, "Script '$commandText' is not found\n");
+		}
+
 	}
 
 	/**
