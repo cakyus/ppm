@@ -522,28 +522,53 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 	public function commandList(){
 
-		$project = new \Pdr\Ppm\Project;
+		$option = new \Pdr\Ppm\Cli\Option;
 
-		$packages = array();
+		$optionListGlobal = FALSE;
+		$optionListLocal = TRUE;
 
-		foreach ($project->getPackages() as $package){
-			$packages[] = $package;
+		if (	$option->getOption('g') != NULL
+			||	$option->getOption('global') != NULL
+			) {
+			$optionListGlobal = TRUE;
+			$optionListLocal = FALSE;
 		}
 
-		foreach ($project->getDevelopmentPackages() as $package){
-			$packages[] = $package;
+		if ($optionListGlobal == TRUE) {
+
+			$project = new \Pdr\Ppm\Project;
+			foreach ($project->getConfigPackage()->packages as $package) {
+				foreach ($package->repositories as $repository) {
+					fwrite(STDOUT, "{$package->name} {$repository->url}\n");
+				}
+			}
 		}
 
-		foreach ($packages as $package) {
+		if ($optionListLocal == TRUE) {
 
-			if ($package->name == 'php') {
-				continue;
+			$project = new \Pdr\Ppm\Project;
+
+			$packages = array();
+
+			foreach ($project->getPackages() as $package){
+				$packages[] = $package;
 			}
 
-			echo $package->name
-				.' '.$package->version
-				.' '.$package->repositoryUrl
-				."\n";
+			foreach ($project->getDevelopmentPackages() as $package){
+				$packages[] = $package;
+			}
+
+			foreach ($packages as $package) {
+
+				if ($package->name == 'php') {
+					continue;
+				}
+
+				echo $package->name
+					.' '.$package->version
+					.' '.$package->repositoryUrl
+					."\n";
+			}
 		}
 	}
 
