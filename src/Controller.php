@@ -263,6 +263,11 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		$project = new \Pdr\Ppm\Project;
 		$option = new \Pdr\Ppm\Cli\Option;
 
+		$vendorDir = $project->getVendorDir();
+		if (is_dir($vendorDir) == FALSE) {
+			mkdir($vendorDir);
+		}
+
 		if ($option->getCommandCount() == 0){
 
 			$lockConfig = $project->getLockConfig();
