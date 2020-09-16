@@ -42,7 +42,11 @@ class Config {
 			$fileData = json_decode($fileText);
 
 			$this->project->name = $fileData->name;
-			$this->project->description = $fileData->description;
+			if (isset($fileData->description) == TRUE){
+				$this->project->description = $fileData->description;
+			} else {
+				$this->project->description = NULL;
+			}
 
 			foreach (array(
 				'scripts'
