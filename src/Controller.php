@@ -542,9 +542,22 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		if ($optionListGlobal == TRUE) {
 
 			$project = new \Pdr\Ppm\Project;
+			$packages = array();
+
 			foreach ($project->getConfigPackage()->packages as $package) {
 				foreach ($package->repositories as $repository) {
-					fwrite(STDOUT, "{$package->name} {$repository->url}\n");
+					if (isset($packages[$package->name]) == FALSE){
+						$packages[$package->name] = array();
+					}
+					$packages[$package->name][] = $repository;
+				}
+			}
+
+			ksort($packages);
+
+			foreach ($packages as $packageName => $repositories){
+				foreach ($repositories as $repository){
+					fwrite(STDOUT, "{$packageName} {$repository->url}\n");
 				}
 			}
 		}
