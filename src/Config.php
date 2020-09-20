@@ -40,9 +40,16 @@ class Config {
 
 			$fileText = file_get_contents($this->filePath);
 			$fileData = json_decode($fileText);
+			if (json_last_error() != 0){
+				throw new \Exception("JSON Parse Error. {$this->filePath}");
+			}
+
+			if (empty($fileData->name)){
+				throw new \Exception("Attribute 'name' is required. {$this->filePath}");
+			}
 
 			$this->project->name = $fileData->name;
-			if (isset($fileData->description) == TRUE){
+			if (empty($fileData->description) == FALSE){
 				$this->project->description = $fileData->description;
 			} else {
 				$this->project->description = NULL;
