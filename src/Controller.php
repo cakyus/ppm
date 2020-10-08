@@ -56,7 +56,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 	protected function initAutoload(){
 
-		fwrite(STDERR, "Generate autoload file ..\n");
+		trigger_error("Generate autoload file ..", E_USER_NOTICE);
 
 		$project = new \Pdr\Ppm\Project;
 
@@ -84,6 +84,9 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		foreach ($project->packages as $package) {
 			$packageName = $package->name;
+			if ($packageName == 'php'){
+				continue;
+			}
 			$composerFile = $project->getVendorDir().'/'.$packageName.'/ppm.json';
 			if (is_file($composerFile) == FALSE){
 				$composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
@@ -94,6 +97,9 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		foreach ($project->developmentPackages as $package) {
 			$packageName = $package->name;
+			if ($packageName == 'php'){
+				continue;
+			}
 			$composerFile = $project->getVendorDir().'/'.$packageName.'/ppm.json';
 			if (is_file($composerFile) == FALSE){
 				$composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
@@ -123,8 +129,8 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		$text =  file_get_contents($composerFile);
 		$data =  json_decode($text, TRUE);
-		if (json_last_error() != \JSON_ERROR_NONE){
-			throw new \Exception("JSON Parse Error.\n".json_last_error_msg());
+		if (json_last_error() != 0){
+			throw new \Exception("JSON Parse Error. '$composerFile'");
 		}
 
 		if (isset($data['autoload']) == FALSE) {
@@ -298,29 +304,6 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			$packageReference = $match[2];
 			$packageRepositoryUrl = NULL;
 
-			// resolve packageRepositoryUrl
-
-			$packageRepositoryUrlItem = array();
-			foreach ($project->configPackage->packages as $configPackage){
-				if ($configPackage->name == $packageName){
-					foreach ($configPackage->repositories as $configPackageRepository){
-						$packageRepositoryUrlItem[] = $configPackageRepository->url;
-					}
-				}
-			}
-
-			if (count($packageRepositoryUrlItem) == 0){
-				throw new \Exception("Can not resolve packageRepositoryUrl for $packageName");
-			} elseif (count($packageRepositoryUrlItem) > 1){
-				fwrite(STDERR, "Package have multiple repository url\n");
-				foreach ($packageRepositoryUrlItem as $packageRepositoryUrl){
-					fwrite(STDERR, "$packageRepositoryUrl\n");
-				}
-				return FALSE;
-			} else {
-				$packageRepositoryUrl = $packageRepositoryUrlItem[0];
-			}
-
 			if ($optionDevelopmentPackage == FALSE){
 				$project->createPackage($packageName, $packageReference, $packageRepositoryUrl);
 			} else {
@@ -361,10 +344,16 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		$project = new \Pdr\Ppm\Project;
 
 		foreach ($project->getPackages() as $package){
+			if ($package->name == 'php'){
+				continue;
+			}
 			$package->update();
 		}
 
 		foreach ($project->getDevelopmentPackages() as $package){
+			if ($package->name == 'php'){
+				continue;
+			}
 			$package->update();
 		}
 
