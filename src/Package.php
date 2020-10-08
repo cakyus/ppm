@@ -166,6 +166,16 @@ class Package {
 					}
 				}
 			}
+			$attributeName = 'require-dev';
+			if (empty($packageConfig->$attributeName) == FALSE){
+				foreach ($packageConfig->$attributeName as $packageItemName => $packageItemReference){
+					if (isset($project->dependencyPackages[$packageItemName]) == FALSE){
+						$package = new \Pdr\Ppm\Package;
+						$package->open($this->project, $packageItemName, $packageItemReference, NULL);
+						$package->create();
+					}
+				}
+			}
 		}
 	}
 
@@ -303,6 +313,57 @@ class Package {
 			// no local changes
 			$commandText = $gitCommand.' merge --ff-only origin/'.$this->version;
 			\Pdr\Ppm\Console::exec($commandText);
+		}
+
+		$project = $this->project;
+		$packageName = $this->name;
+		$packageReference = $this->reference;
+		$packageVersion = $this->version;
+		$packageCommitHash = $this->commitHash;
+		$packageRepositoryUrl = $this->repositoryUrl;
+		$packagePath = $this->project->getVendorDir().'/'.$packageName;
+
+		if (isset($project->dependencyPackages[$packageName]) == FALSE){
+			$object = new \stdClass;
+			$object->name = $packageName;
+			$object->version = $packageVersion;
+			$object->commitHash = $packageCommitHash;
+			$object->source = new \stdClass;
+			$object->source->type = 'cvs';
+			$object->source->reference = $packageCommitHash;
+			$project->dependencyPackages[$packageName] = $object;
+		}
+
+		// install dependencies
+
+		$packageConfigPath = $this->getPath().'/ppm.json';
+		if (is_file($packageConfigPath)){
+			$packageConfigText = file_get_contents($packageConfigPath);
+			$packageConfig = json_decode($packageConfigText);
+			if (json_last_error() != 0){
+				trigger_error(json_last_error_msg(), E_USER_WARNING);
+				throw new \Exception("JSON Parse Error. '$packageConfigPath'");
+			}
+			$attributeName = 'require';
+			if (empty($packageConfig->$attributeName) == FALSE){
+				foreach ($packageConfig->$attributeName as $packageItemName => $packageItemReference){
+					if (isset($project->dependencyPackages[$packageItemName]) == FALSE){
+						$package = new \Pdr\Ppm\Package;
+						$package->open($this->project, $packageItemName, $packageItemReference, NULL);
+						$package->update();
+					}
+				}
+			}
+			$attributeName = 'require-dev';
+			if (empty($packageConfig->$attributeName) == FALSE){
+				foreach ($packageConfig->$attributeName as $packageItemName => $packageItemReference){
+					if (isset($project->dependencyPackages[$packageItemName]) == FALSE){
+						$package = new \Pdr\Ppm\Package;
+						$package->open($this->project, $packageItemName, $packageItemReference, NULL);
+						$package->update();
+					}
+				}
+			}
 		}
 	}
 }
