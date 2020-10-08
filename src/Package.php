@@ -47,6 +47,7 @@ class Package {
 		$this->name = $packageName;
 		$this->reference = $packageReference;
 		$this->version = $packageVersion;
+		$this->version = preg_replace("/^dev\-/", "", $packageVersion);
 		$this->repositoryUrl = $packageRepositoryUrl;
 		$this->path = $project->getVendorDir().'/'.$packageName;
 
@@ -262,7 +263,7 @@ class Package {
 
 	public function update() {
 
-		fwrite(STDOUT, "Update {$this->name} {$this->repositoryUrl} ..\n");
+		fwrite(STDOUT, "Update {$this->name} {$this->version} {$this->repositoryUrl} ..\n");
 
 		$gitCommand = $this->getGitCommand();
 
