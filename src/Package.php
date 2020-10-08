@@ -39,7 +39,6 @@ class Package {
 
 	public function open(\Pdr\Ppm\Project $project, $packageName, $packageReference, $packageRepositoryUrl) {
 
-		// TODO resolve version from reference
 		$packageVersion = $packageReference;
 
 		$this->project = $project;
@@ -51,7 +50,7 @@ class Package {
 		$this->repositoryUrl = $packageRepositoryUrl;
 		$this->path = $project->getVendorDir().'/'.$packageName;
 
-		// repositoryUrl
+		// resolve repositoryUrl
 
 		if (is_dir($this->path)){
 			if (is_null($packageRepositoryUrl) == TRUE){
@@ -67,6 +66,7 @@ class Package {
 		}
 
 		// commitHash
+
 		if (is_dir($this->path) && is_dir($this->path.'/.git')){
 
 			$gitCommand = 'git'
@@ -79,14 +79,23 @@ class Package {
 			$packageCommitHash = trim($packageCommitHash);
 			$this->commitHash = $packageCommitHash;
 		}
+
+		if (empty($packageRepositoryUrl)){
+			trigger_error("Can not resolve packageRepositoryUrl"
+				."\n (packageName: $packageName, packageRepositoryUrl: $packageRepositoryUrl)"
+				, E_USER_ERROR
+				);
+			exit(1);
+		}
 	}
 
 	public function create() {
 
 		$config = new \Pdr\Ppm\GlobalConfig;
 
+		$project = $this->project;
 		$packageName = $this->name;
-		// TODO resolve packageVersion from packageRevision
+		$packageReference = $this->reference;
 		$packageVersion = $this->version;
 		$packageRepositoryUrl = $this->repositoryUrl;
 		$packagePath = $this->project->getVendorDir().'/'.$packageName;
@@ -98,6 +107,8 @@ class Package {
 		if (is_dir($packagePath) == FALSE){
 			mkdir($packagePath);
 		}
+
+		trigger_error("Install $packageName:$packageVersion $packageRepositoryUrl ..", E_USER_NOTICE);
 
 		$gitCommand = 'git'
 			.' --git-dir '.$packagePath.'/.git'
@@ -120,9 +131,42 @@ class Package {
 		}
 
 		$commandText = $gitCommand.' log -n 1 --format=%H HEAD';
-		$commitHash = \Pdr\Ppm\Console::text($commandText);
-		$commitHash = trim($commitHash);
-		$this->commitHash = $commitHash;
+		$packageCommitHash = \Pdr\Ppm\Console::text($commandText);
+		$packageCommitHash = trim($packageCommitHash);
+		$this->commitHash = $packageCommitHash;
+
+		if (isset($project->dependencyPackages[$packageName]) == FALSE){
+			$object = new \stdClass;
+			$object->name = $packageName;
+			$object->version = $packageVersion;
+			$object->commitHash = $packageCommitHash;
+			$object->source = new \stdClass;
+			$object->source->type = 'cvs';
+			$object->source->reference = $packageCommitHash;
+			$project->dependencyPackages[$packageName] = $object;
+		}
+
+		// install dependencies
+
+		$packageConfigPath = $this->getPath().'/ppm.json';
+		if (is_file($packageConfigPath)){
+			$packageConfigText = file_get_contents($packageConfigPath);
+			$packageConfig = json_decode($packageConfigText);
+			if (json_last_error() != 0){
+				trigger_error(json_last_error_msg(), E_USER_WARNING);
+				throw new \Exception("JSON Parse Error. '$packageConfigPath'");
+			}
+			$attributeName = 'require';
+			if (empty($packageConfig->$attributeName) == FALSE){
+				foreach ($packageConfig->$attributeName as $packageItemName => $packageItemReference){
+					if (isset($project->dependencyPackages[$packageItemName]) == FALSE){
+						$package = new \Pdr\Ppm\Package;
+						$package->open($this->project, $packageItemName, $packageItemReference, NULL);
+						$package->create();
+					}
+				}
+			}
+		}
 	}
 
 	public function getRepositoryUrl() {
@@ -137,23 +181,6 @@ class Package {
 		}
 
 		return false;
-	}
-
-
-	public function getConfig(){
-
-		$config = new \Pdr\Ppm\Config;
-		$config->open($this);
-
-		return $config;
-	}
-
-	public function getLockConfig(){
-
-		$config = new \Pdr\Ppm\LockConfig;
-		$config->open($this);
-
-		return $config;
 	}
 
 	public function getPath(){
