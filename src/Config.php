@@ -96,10 +96,10 @@ class Config {
 
 	public function save(){
 
-		$project = new \stdClass;
+		$object = new \stdClass;
 
-		$project->name = $this->project->name;
-		$project->description = $this->project->description;
+		$object->name = $this->project->name;
+		$object->description = $this->project->description;
 
 		$packages = $this->project->packages;
 
@@ -116,12 +116,12 @@ class Config {
 			ksort($packages);
 
 			$attributePackage = 'require';
-			$project->$attributePackage = new \stdClass;
+			$object->$attributePackage = new \stdClass;
 
 			foreach ($packages as $package){
 				$packageName = $package->name;
 				$packageReference = $package->reference;
-				$project->$attributePackage->$packageName = $packageReference;
+				$object->$attributePackage->$packageName = $packageReference;
 			}
 		}
 
@@ -140,26 +140,34 @@ class Config {
 			ksort($packages);
 
 			$attributePackage = 'require-dev';
-			$project->$attributePackage = new \stdClass;
+			$object->$attributePackage = new \stdClass;
 
 			foreach ($packages as $package){
 				$packageName = $package->name;
 				$packageReference = $package->reference;
-				$project->$attributePackage->$packageName = $packageReference;
+				$object->$attributePackage->$packageName = $packageReference;
 			}
 		}
 
 		if (empty($this->autoload) == FALSE){
-			$project->autoload = $this->autoload;
+			$object->autoload = $this->autoload;
 		}
 
-		$fileText = json_encode($project, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+		if (is_null($object->description)){
+			unset($object->description);
+		}
+
+		$fileText = json_encode($object, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 		$fileLines = array();
 		foreach (explode("\n", $fileText) as $fileLine){
 			$fileLines[] = str_replace('    ', '  ', $fileLine);
 		}
 		$fileText = implode("\n", $fileLines);
 
-		file_put_contents($this->filePath, $fileText);
+		// WARNING: config file update is unstable
+
+		echo $fileText."\n";
+
+		// file_put_contents($this->filePath, $fileText);
 	}
 }
