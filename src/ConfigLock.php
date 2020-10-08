@@ -88,6 +88,19 @@ class ConfigLock {
 			$packages[$package->name] = $packageData;
 		}
 
+		foreach ($this->project->dependencyPackages as $package){
+
+			$packageData = new \stdClass;
+			$packageDataSource = new \stdClass;
+			$packageData->name = $package->name;
+			$packageData->version = $package->version;
+			$packageDataSource->type = 'cvs';
+			$packageDataSource->reference = $package->commitHash;
+			$packageData->source = $packageDataSource;
+
+			$packages[$package->name] = $packageData;
+		}
+
 		// sort packages
 		ksort($packages);
 		$packages = array_values($packages);
