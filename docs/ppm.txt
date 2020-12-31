@@ -9,7 +9,8 @@ Basic Commands
   init     Initialize or reinitialize
   install  Install a package
   remove   Remove packages
-  update   Update packages
+  upgrade  Update packages
+  update   Update repositories database
   status   Print status: local, local vs lock, remote vs lock
   search   Search packages
   show     Show package details

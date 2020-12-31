@@ -336,10 +336,10 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 	}
 
 	/**
-	 * Update remote
+	 * Update packages
 	 **/
 
-	public function commandUpdate() {
+	public function commandUpgrade(){
 
 		$project = new \Pdr\Ppm\Project;
 
@@ -360,6 +360,14 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		$project->configLock->save();
 		$project->configPackage->save();
 		$this->initAutoload();
+	}
+
+	/**
+	 * Update repositories database
+	 **/
+
+	public function commandUpdate() {
+
 	}
 
 	/**
