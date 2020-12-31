@@ -19,39 +19,32 @@ namespace Pdr\Ppm;
 
 class GlobalConfig {
 
-	public $data;
+	protected $_filePath;
+	protected $_attributes;
 
 	public function __construct(){
 
-		$filePath = null;
+		$this->_filePath = $_SERVER['HOME'].'/.config/ppm/config.json';
+		$this->_attributes = array();
 
-		if (is_file($_SERVER['HOME'].'/.composer/config.json')){
-			$filePath = $_SERVER['HOME'].'/.composer/config.json';
-		} elseif (is_file($_SERVER['HOME'].'/.config/composer/config.json')){
-			$filePath = $_SERVER['HOME'].'/.config/composer/config.json';
-		} elseif (
-					isset($_SERVER['APPDATA'])
-			&&	is_file($_SERVER['APPDATA'].'/Composer/config.json')
-			){
-			$filePath = $_SERVER['APPDATA'].'/Composer/config.json';
+		if (is_file($this->_filePath) == FALSE){
+
+			fwrite(STDERR, "WARNING Global configuration file is not found.\n");
+
+			// Create initial configuration
+			$this->repositories = array();
+			$this->save();
+			return FALSE;
 		}
 
-		if (is_null($filePath)){
-			\Pdr\Ppm\Logger::warn("Global composer config file is not found");
-			return false;
+		$attributes = json_decode(file_get_contents($this->_filePath));
+
+		if (json_last_error() > 0){
+			throw new \Exception("JSON parse error.");
 		}
 
-		if (($data = json_decode(file_get_contents($filePath))) == false){
-			\Pdr\Ppm\Logger::warn("JSON parse fail");
-			return false;
-		}
-
-		$this->data = $data;
-		return true;
-	}
-
-	public function open() {
-		\Pdr\Ppm\Logger::deprecated(__METHOD__);
+		$this->_attributes = $attributes;
+		return TRUE;
 	}
 
 	public function getRepositoryUrl($packageName) {
@@ -69,5 +62,27 @@ class GlobalConfig {
 		}
 
 		return false;
+	}
+
+	public function __isset($attributeName){
+		return array_key_exists($attributeName, $this->_attributes);
+	}
+
+	public function __get($attributeName){
+		if (array_key_exists($attributeName, $this->_attributes) == TRUE){
+			return $this->_attributes[$attributeName];
+		}
+		return NULL;
+	}
+
+	public function __set($attributeName, $attributeValue){
+		$this->_attributes[$attributeName] = $attributeValue;
+	}
+
+	public function save(){
+		return file_put_contents(
+			  $this->_filePath
+			, json_encode($this->_attributes)
+			);
 	}
 }
