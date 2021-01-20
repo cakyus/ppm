@@ -25,12 +25,28 @@ class Attribute {
 		$this->_attributes = array();
 	}
 
+	public function loadObject($object) {
+		$this->_attributes = array();
+		foreach ($object as $attributeName => $attributeValue){
+			$this->_attributes[$attributeName] = $attributeValue;
+		}
+		return TRUE;
+	}
+
 	public function saveObject() {
 		$object = new \stdClass;
 		foreach ($this->_attributes as $attributeName => $attributeValue){
 			$object->$attributeName = $attributeValue;
 		}
 		return $object;
+	}
+
+	public function get($attributeName) {
+		return $this->__get($attributeName);
+	}
+
+	public function set($attributeName, $attributeValue) {
+		return $this->__set($attributeName, $attributeValue);
 	}
 
 	public function __isset($attributeName) {
