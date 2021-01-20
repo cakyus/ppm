@@ -25,6 +25,14 @@ class Attribute {
 		$this->_attributes = array();
 	}
 
+	public function saveObject() {
+		$object = new \stdClass;
+		foreach ($this->_attributes as $attributeName => $attributeValue){
+			$object->$attributeName = $attributeValue;
+		}
+		return $object;
+	}
+
 	public function __isset($attributeName) {
 		return array_key_exists($attributeName, $this->_attributes);
 	}
