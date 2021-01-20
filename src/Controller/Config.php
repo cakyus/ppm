@@ -25,10 +25,9 @@ class Config extends \Pdr\Ppm\Cli\Controller {
 
 	public function commandIndex(){
 
-		$config = new \Pdr\Ppm\ComposerConfig;
+		$config = new \Pdr\Ppm\GlobalConfig;
 		$view = new \Pdr\Ppm\View\Config;
 
-		$config->open();
 		$view->open($config);
 		$view->write();
 	}
