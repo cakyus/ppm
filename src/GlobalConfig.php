@@ -19,41 +19,39 @@ namespace Pdr\Ppm;
 
 class GlobalConfig {
 
-	protected $_filePath;
-	protected $_attributes;
+	protected static $_attributes;
 
 	public function __construct(){
 
-		$this->_filePath = $_SERVER['HOME'].'/.config/ppm/config.json';
-		$this->_attributes = array();
-
-		if (is_file($this->_filePath) == FALSE){
-
-			fwrite(STDERR, "WARNING Global configuration file is not found.\n");
-
-			// Create initial configuration
-			$this->repositories = array();
-			$this->save();
-			return FALSE;
+		if (is_null(self::$_attributes) == TRUE){
+			$filePath = $_SERVER['HOME'].'/.config/ppm/config.json';
+			if (is_file($filePath)){
+				$fileText = file_get_contents($filePath);
+				$fileData = json_decode($fileText);
+				if ($fileData){
+					$attributes = array();
+					foreach ($fileData as $attributeName => $attributeValue){
+						$attributes[$attributeName] = $attributeValue;
+					}
+					self::$_attributes = $attributes;
+					return TRUE;
+				}
+			}
+		} else {
+			return TRUE;
 		}
 
-		$attributes = json_decode(file_get_contents($this->_filePath));
-
-		if (json_last_error() > 0){
-			throw new \Exception("JSON parse error.");
-		}
-
-		$this->_attributes = $attributes;
-		return TRUE;
+		self::$_attributes = array();
+		return FALSE;
 	}
 
 	public function getRepositoryUrl($packageName) {
 
-		if (	isset($this->data->repositories)
-			&&	is_object($this->data->repositories)
+		if (	isset($this->repositories)
+			&&	is_object($this->repositories)
 			){
-			if (array_key_exists($packageName, $this->data->repositories)) {
-				$repository = $this->data->repositories->$packageName;
+			if (array_key_exists($packageName, $this->repositories)) {
+				$repository = $this->repositories->$packageName;
 				if (isset($repository->url)){
 					return $repository->url;
 				}
@@ -64,25 +62,33 @@ class GlobalConfig {
 		return false;
 	}
 
-	public function __isset($attributeName){
-		return array_key_exists($attributeName, $this->_attributes);
-	}
-
-	public function __get($attributeName){
-		if (array_key_exists($attributeName, $this->_attributes) == TRUE){
-			return $this->_attributes[$attributeName];
+	public function __get($attributeName) {
+		if (array_key_exists($attributeName, self::$_attributes)){
+			return self::$_attributes[$attributeName];
 		}
 		return NULL;
 	}
 
-	public function __set($attributeName, $attributeValue){
-		$this->_attributes[$attributeName] = $attributeValue;
+	public function __set($attributeName, $attributeValue) {
+		self::$_attributes[$attributeName] = $attributeValue;
 	}
 
-	public function save(){
-		return file_put_contents(
-			  $this->_filePath
-			, json_encode($this->_attributes)
-			);
+	public function save() {
+
+		$fileDir = $_SERVER['HOME'].'/.config';
+		if (is_dir($fileDir) == FALSE){
+			mkdir($fileDir);
+		}
+
+		$fileDir = $fileDir.'/.ppm';
+		if (is_dir($fileDir) == FALSE){
+			mkdir($fileDir);
+		}
+
+		$filePath = $fileDir.'/config.json';
+		$fileText = json_encode(self::$_attributes);
+
+		file_put_contents($filePath, $fileText);
 	}
+
 }
