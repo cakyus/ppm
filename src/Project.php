@@ -137,7 +137,30 @@ class Project {
 		$package->create();
 
 		$this->addPackage($package);
-		$this->config->save();
+
+		// -- config -------------------------------------------------------
+
+		$config = new \Pdr\Ppm\Config2;
+
+		if (	$config->open($this->path.'/composer.json') == FALSE
+			&&	$config->open($this->path.'/ppm.json') == FALSE
+			){
+			throw new \Exception("Configuration file is not found");
+		}
+
+		$packageObject = $config->get('require');
+		if (empty($packageObject) == TRUE){
+			$packageObject = new \stdClass;
+		}
+		$packageObject->$packageName = $packageRevision;
+		$config->set('require', $packageObject);
+		$config->save();
+
+		// -- /config ------------------------------------------------------
+
+		$loader = new \Pdr\Ppm\Loader;
+		$loader->create();
+
 		$this->configLock->save();
 	}
 
