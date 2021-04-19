@@ -233,7 +233,6 @@ class Repository {
 		$branches = array();
 		foreach ($branchNames as $branchName){
 			$branch = new \Pdr\Ppm\Branch;
-			$branch->name = $branchName;
 			$branch->open($this, $branchName);
 			$branches[] = $branch;
 		}
