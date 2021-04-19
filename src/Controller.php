@@ -173,7 +173,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 					$classPrefixLength = strlen($classPrefix);
 					$pathPrefix = $packageDir.'.\'/'.$pathPrefix.'\'';
 					$autoloadText .= "\tif (substr(\$className,0,$classPrefixLength) == '".str_replace('\\', '\\\\', $classPrefix)."'){\n";
-					$autoloadText .= "\t\t\$classFile = $pathPrefix.str_replace('\\\\','/',\$className).'.php';\n";
+					$autoloadText .= "\t\t\$classFile = $pathPrefix.str_replace(array('\\\\', '_'),'/',\$className).'.php';\n";
 					$autoloadText .= "\t\tif (is_file(\$classFile)){ require_once(\$classFile); }\n";
 					$autoloadText .= "\t}\n\n";
 				}
