@@ -167,6 +167,17 @@ class Repository {
 		return $remotes;
 	}
 
+	public function getRemote($remoteName) {
+
+		$remotes = $this->getRemotes();
+		if (array_key_exists($remoteName, $remotes) == TRUE){
+			return $remotes[$remoteName];
+		}
+
+		return NULL;
+	}
+
+
 	/**
 	 * @return \Pdr\Ppm\Commit|boolean
 	 **/
@@ -192,16 +203,6 @@ class Repository {
 			return $commit->commitHash;
 		}
 
-		return false;
-	}
-
-
-	public function getRemote($remoteName) {
-		foreach ($this->getRemotes() as $remote){
-			if ($remote->name == $remoteName){
-				return $remote;
-			}
-		}
 		return false;
 	}
 
