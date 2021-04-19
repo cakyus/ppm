@@ -40,7 +40,7 @@ class Remote {
 			$branch = new \Pdr\Ppm\Branch;
 			$branch->name = basename($branchName);
 			$branch->open($this->repository, $branchName);
-			$branches[] = $branch;
+			$branches[$branchName] = $branch;
 		}
 
 		return $branches;
@@ -48,6 +48,12 @@ class Remote {
 
 	public function getBranch($branchName) {
 
+		$branches = $this->getBranches();
+		if (array_key_exists($branchName, $branches) == TRUE){
+			return $branches[$branchName];
+		}
+
+		return NULL;
 	}
 
 	public function getTags() {
@@ -113,6 +119,23 @@ class Remote {
 		}
 		$command .= ' '.$refspec;
 
-		\Pdr\Ppm\Console::exec($command);
+		$console = new \Pdr\Ppm\Console2;
+		$console->exec($command);
+	}
+
+	public function push($commitReference=NULL) {
+
+		$console = new \Pdr\Ppm\Console2;
+
+		$branch = $this->repository->getCurrentBranch();
+		$command  = $this->repository->getGitCommand();
+
+		if (is_null($commitReference) == TRUE){
+			$commitReference = $branch->name;
+		}
+
+		$command .= ' push '.$this->name.' '.$branch->name.':'.$commitReference;
+
+		$console->exec($command);
 	}
 }
