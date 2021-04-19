@@ -17,10 +17,6 @@
 
 namespace Pdr\Ppm;
 
-/**
- * @deprecated use \Pdr\Ppm\Console2
- **/
-
 class Console2 {
 
 	public function exec($command){
