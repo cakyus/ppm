@@ -24,4 +24,18 @@ class Branch extends \Pdr\Ppm\Commit {
 	public function __construct() {
 		parent::__construct();
 	}
+
+	/**
+	 * @deprecated use Repository.checkout()
+	 **/
+
+	public function open(\Pdr\Ppm\Repository $repository, $commitReference){
+
+		if (parent::open($repository, $commitReference) == TRUE){
+			$this->name = $commitReference;
+			return TRUE;
+		}
+
+		return FALSE;
+	}
 }
