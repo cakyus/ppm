@@ -149,6 +149,7 @@ class Repository {
 		$remotes = array();
 		$command  = $this->getGitCommand();
 		$command .= ' remote --verbose';
+
 		foreach (\Pdr\Ppm\Console::line($command) as $line){
 
 			$match = preg_split("/\s+/", $line);
@@ -160,7 +161,7 @@ class Repository {
 			$remote->name = $remoteName;
 			$remote->url = $remoteUrl;
 
-			$remotes[] = $remote;
+			$remotes[$remoteName] = $remote;
 		}
 
 		return $remotes;
