@@ -107,6 +107,16 @@ class Repository {
 		return $command;
 	}
 
+	public function addAllChanges() {
+
+		$console = new \Pdr\Ppm\Console2;
+
+		$command  = $this->getGitCommand();
+		$command .= ' add --all';
+
+		$console->exec($command);
+	}
+
 	/**
 	 * @return array Collection of \Pdr\Ppm\Remote
 	 **/
