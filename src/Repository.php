@@ -247,6 +247,25 @@ class Repository {
 
 	public function getCurrentBranch() {
 
+		$console = new \Pdr\Ppm\Console2;
+
+		$command  = $this->getGitCommand();
+		$command .= ' branch';
+		$branches = $console->line($command);
+
+		if (count($branches) == 0){
+			// no branch defined , ie. $GIT_DIR/refs/heads is empty
+			return FALSE;
+		}
+
+		$command  = $this->getGitCommand();
+		$command .= ' rev-parse --abbrev-ref HEAD';
+		$branchName = $console->text($command);
+
+		$branch = new \Pdr\Ppm\Branch;
+		$branch->open($this, $branchName);
+
+		return $branch;
 	}
 
 	/**
