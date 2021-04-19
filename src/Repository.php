@@ -22,6 +22,32 @@ class Repository {
 	protected $workTree;
 	protected $gitDir;
 
+	public function create($gitDir, $workTree=NULL) {
+
+		$console = new \Pdr\Ppm\Console2;
+
+		$command  = 'git';
+		$command .= ' init';
+
+		if (is_null($workTree) == TRUE){
+			$command .= ' --bare '.escapeshellarg($gitDir);
+		} elseif (dirname($gitDir) != $workTree) {
+			$command .= ' --separate-git-dir '.escapeshellarg($gitDir);
+			$command .= ' '.escapeshellarg($workTree);
+		} else {
+			$command .= ' '.escapeshellarg($workTree);
+		}
+
+		$console->exec($command);
+
+		if (is_null($workTree) == TRUE){
+			$this->gitDir = $gitDir;
+		} else {
+			$this->gitDir = $gitDir;
+			$this->workTree = $workTree;
+		}
+	}
+
 	public function open($gitDir, $workTree=NULL){
 
 		if (is_dir($gitDir) == false){
