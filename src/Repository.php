@@ -48,6 +48,18 @@ class Repository {
 		}
 	}
 
+	public function addRemote($remote) {
+
+		$console = new \Pdr\Ppm\Console2;
+
+		$command  = $this->getGitCommand();
+		$command .= ' remote add'
+			.' '.$remote->name
+			.' '.$remote->url
+			;
+
+		$console->exec($command);
+	}
 	public function open($gitDir, $workTree=NULL){
 
 		if (is_dir($gitDir) == false){
