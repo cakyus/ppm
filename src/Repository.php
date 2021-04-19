@@ -60,6 +60,34 @@ class Repository {
 
 		$console->exec($command);
 	}
+
+	public function checkout($branchName, $commitHash) {
+
+		$console = new \Pdr\Ppm\Console2;
+
+		$command  = $this->getGitCommand();
+		$command .= ' clean --force -x';
+		$console->exec($command);
+
+		if ( ( $branch = $this->getCurrentBranch() ) == FALSE){
+			// no branch -> create branch "master" that point to required commit hash
+			$command  = $this->getGitCommand();
+			$command .= ' branch '.$branchName.' '.$commitHash;
+			$console->exec($command);
+		} elseif ($branch->name != $branchName){
+			// branchName and current branchName are different
+			$command  = $this->getGitCommand();
+			$command .= ' checkout '.$branchName;
+			$console->exec($command);
+		} else {
+			// branchName and current branchName are the same -> do nothing
+		}
+
+		$command  = $this->getGitCommand();
+		$command .= ' reset --hard '.$commitHash;
+		$console->exec($command);
+	}
+
 	public function open($gitDir, $workTree=NULL){
 
 		if (is_dir($gitDir) == false){
