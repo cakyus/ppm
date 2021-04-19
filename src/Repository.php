@@ -117,6 +117,29 @@ class Repository {
 		$console->exec($command);
 	}
 
+	public function commit($commitMessage) {
+
+		$console = new \Pdr\Ppm\Console2;
+
+		// -- check committer info -----------------------------------------
+
+		if (is_file($_SERVER['HOME'].'/.gitconfig') == FALSE){
+			// set committer email
+			$command = 'git config --global user.email bot@127.0.0.1';
+			$console->exec($command);
+			// set committer name
+			$command = 'git config --global user.name bot';
+			$console->exec($command);
+		}
+
+		// -- commit -------------------------------------------------------
+
+		$command  = $this->getGitCommand();
+		$command .= ' commit --allow-empty -m '.escapeshellarg($commitMessage);
+
+		$console->exec($command);
+	}
+
 	/**
 	 * @return array Collection of \Pdr\Ppm\Remote
 	 **/
