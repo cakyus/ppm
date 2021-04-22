@@ -92,7 +92,6 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 				$composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
 			}
 			$packageDir = '$vendorDir.\'/'.$packageName.'\'';
-			trigger_error("composerFile $composerFile", E_USER_NOTICE);
 			$autoloadText .= $this->initAutoloadFile($packageDir, $composerFile);
 		}
 
