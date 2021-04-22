@@ -33,7 +33,16 @@ class Config {
 	public function open(\Pdr\Ppm\Project $project){
 
 		$this->project = $project;
-		$this->filePath = $this->project->getPath().'/ppm.json';
+
+		$composerFile = $this->project->getPath().'/ppm.json';
+		if (is_file($composerFile) == FALSE){
+			$composerFile = $this->project->getPath().'/composer.json';
+		}
+		if (is_file($composerFile) == FALSE){
+			trigger_error("composerFile is not found", E_USER_WARNING);
+			return FALSE;
+		}
+		$this->filePath = $composerFile;
 		$this->scripts = array();
 
 		if (is_file($this->filePath)){
