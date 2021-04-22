@@ -38,7 +38,9 @@ class Project {
 
 	public function __construct() {
 
-		$this->path = '.';
+		// TODO get path from a command line argument
+
+		$this->path = getcwd();
 		$this->vendorDir = 'vendor';
 
 		$this->packages = array();
