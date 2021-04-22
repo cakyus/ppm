@@ -56,11 +56,11 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 	protected function initAutoload(){
 
-		trigger_error("Generate autoload file ..", E_USER_NOTICE);
-
 		$project = new \Pdr\Ppm\Project;
 
-		$autoloadFunctionName = 'ppm_autoload_'.md5(uniqid('', TRUE));
+		trigger_error("Generate autoload file ..", E_USER_NOTICE);
+
+		$autoloadFunctionName = 'ppm_autoload';
 
 		$autoloadFile = $project->getVendorDir().'/autoload.php';
 		$autoloadClassMapText = '';
@@ -82,7 +82,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			mkdir(dirname($autoloadFile));
 		}
 
-		foreach ($project->packages as $package) {
+		foreach ($project->getPackages() as $package) {
 			$packageName = $package->name;
 			if ($packageName == 'php'){
 				continue;
@@ -92,6 +92,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 				$composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
 			}
 			$packageDir = '$vendorDir.\'/'.$packageName.'\'';
+			trigger_error("composerFile $composerFile", E_USER_NOTICE);
 			$autoloadText .= $this->initAutoloadFile($packageDir, $composerFile);
 		}
 
