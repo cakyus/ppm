@@ -5,6 +5,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 define('FCPATH', dirname(__FILE__));
+define('WORKDIR', getcwd());
 
 date_default_timezone_set('Asia/Jakarta');
 
