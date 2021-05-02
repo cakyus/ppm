@@ -40,7 +40,7 @@ class Project {
 
 		// TODO get path from a command line argument
 
-		$this->path = getcwd();
+		$this->path = WORKDIR;
 		$this->vendorDir = 'vendor';
 
 		$this->packages = array();
