@@ -371,12 +371,13 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 	}
 
 	/**
-	 * Print statuses : local, local vs lock, and remote vs lock
+	 * Print status of local, local vs remove, and local vs lock
 	 **/
 
 	public function commandStatus() {
 
 		$project = new \Pdr\Ppm\Project;
+		$console = new \Pdr\Ppm\Console2;
 
 		$packages = array();
 
@@ -424,6 +425,18 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 				$commandText = $gitCommand.' log -n 1 --format=%H';
 				$localCommitHash = \Pdr\Ppm\Console::text($commandText);
 
+				// remote status : local vs remote
+
+				if (is_file($packageDir.'/.git/refs/remotes/origin/master') == TRUE){
+					$remoteCommitHash = file_get_contents($packageDir.'/.git/refs/remotes/origin/master');
+					$remoteCommitHash = trim($remoteCommitHash);
+					if ($localCommitHash == $remoteCommitHash){
+						$remoteStatus = ' ';
+					} else {
+						$remoteStatus = 'M';
+					}
+				}
+
 				// lock status : local vs lock
 
 				foreach ($project->configLock->packages as $lockPackage){
@@ -435,25 +448,13 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 						}
 					}
 				}
-
-				// remote status : remote vs lock
-
-				foreach ($project->configLock->packages as $lockPackage){
-					if ($package->name == $lockPackage->name){
-						if ($package->commitHash == $lockPackage->source->reference){
-							$remoteStatus = ' ';
-						} else {
-							$remoteStatus = 'M';
-						}
-					}
-				}
 			}
 
-			if ($localStatus == ' ' && $lockStatus == ' ' && $remoteStatus == ' '){
+			if ($localStatus == ' ' && $remoteStatus == ' ' && $lockStatus == ' '){
 				continue;
 			}
 
-			fwrite(STDOUT, $localStatus.$lockStatus.$remoteStatus.' '.$package->name."\n");
+			fwrite(STDOUT, $localStatus.$remoteStatus.$lockStatus.' '.$package->name."\n");
 		}
 	}
 
