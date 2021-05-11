@@ -119,13 +119,13 @@ class Remote {
 		}
 		$command .= ' '.$refspec;
 
-		$console = new \Pdr\Ppm\Console2;
+		$console = new \Pdr\Ppm\Console;
 		$console->exec($command);
 	}
 
 	public function push($commitReference=NULL) {
 
-		$console = new \Pdr\Ppm\Console2;
+		$console = new \Pdr\Ppm\Console;
 
 		$branch = $this->repository->getCurrentBranch();
 		$command  = $this->repository->getGitCommand();

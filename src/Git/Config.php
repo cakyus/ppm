@@ -31,7 +31,7 @@ class Config {
 	public function openGlobal(){
 		$this->options['file'] = '--global';
 		if (is_null(self::$_configNames)){
-			$console = new \Pdr\Ppm\Console2;
+			$console = new \Pdr\Ppm\Console;
 			// NOTE git 1.9.1 does not support option "--name-only"
 			$commandText = $this->getCommandText().' --list';
 			$configNames = array();
@@ -53,7 +53,7 @@ class Config {
 		}
 		$this->options['file'] = '--file '.escapeshellarg($filePath);
 		if (is_null(self::$_configNames)){
-			$console = new \Pdr\Ppm\Console2;
+			$console = new \Pdr\Ppm\Console;
 			// NOTE git 1.9.1 does not support option "--name-only"
 			$commandText = $this->getCommandText().' --list';
 			$configNames = array();
@@ -73,7 +73,7 @@ class Config {
 
 	public function get($configName){
 
-		$console = new \Pdr\Ppm\Console2;
+		$console = new \Pdr\Ppm\Console;
 
 		if (isset(self::$_configValues[$configName])){
 			return self::$_configValues[$configName];
@@ -93,7 +93,7 @@ class Config {
 
 	public function set($configName, $configValue){
 
-		$console = new \Pdr\Ppm\Console2;
+		$console = new \Pdr\Ppm\Console;
 
 		$value = $this->get($configName);
 
@@ -122,7 +122,7 @@ class Config {
 
 	public function del($configName){
 
-		$console = new \Pdr\Ppm\Console2;
+		$console = new \Pdr\Ppm\Console;
 
 		$value = $this->get($configName);
 

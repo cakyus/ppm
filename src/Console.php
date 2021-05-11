@@ -17,37 +17,39 @@
 
 namespace Pdr\Ppm;
 
-/**
- * @deprecated use \Pdr\Ppm\Console2
- **/
-
 class Console {
 
-	public static function exec($command){
-
+	public function exec($command){
+		$option = new \Pdr\Ppm\Cli\Option;
+		if ($option->getOption('v')){
+			fwrite(STDERR, "> $command\n");
+		}
 		passthru($command, $exitCode);
 		if ($exitCode != 0){
-			fwrite(STDERR, "> $command\n");
 			throw new \Exception("Command return non zero exit code");
 		}
 	}
 
-	public static function text($command){
-
+	public function text($command){
+		$option = new \Pdr\Ppm\Cli\Option;
+		if ($option->getOption('v')){
+			fwrite(STDERR, "> $command\n");
+		}
 		exec($command, $outputLines, $exitCode);
 		if ($exitCode != 0){
-			fwrite(STDERR, "> $command\n");
 			throw new \Exception("Command return non zero exit code");
 		}
 
 		return implode("\n", $outputLines);
 	}
 
-	public static function line($command){
-
+	public function line($command){
+		$option = new \Pdr\Ppm\Cli\Option;
+		if ($option->getOption('v')){
+			fwrite(STDERR, "> $command\n");
+		}
 		exec($command, $outputLines, $exitCode);
 		if ($exitCode != 0){
-			fwrite(STDERR, "> $command\n");
 			throw new \Exception("Command return non zero exit code");
 		}
 		return $outputLines;

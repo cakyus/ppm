@@ -201,7 +201,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 	public function initConfig(){
 
 		$project = new \Pdr\Ppm\Project2;
-		$console = new \Pdr\Ppm\Console2;
+		$console = new \Pdr\Ppm\Console;
 		$config = new \Pdr\Ppm\Git\Config;
 
 		$vendorDir = $project->getVendorDir();
@@ -377,7 +377,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 	public function commandStatus() {
 
 		$project = new \Pdr\Ppm\Project;
-		$console = new \Pdr\Ppm\Console2;
+		$console = new \Pdr\Ppm\Console;
 
 		$packages = array();
 

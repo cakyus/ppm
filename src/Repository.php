@@ -24,7 +24,7 @@ class Repository {
 
 	public function create($gitDir, $workTree=NULL) {
 
-		$console = new \Pdr\Ppm\Console2;
+		$console = new \Pdr\Ppm\Console;
 
 		$command  = 'git';
 		$command .= ' init';
@@ -50,7 +50,7 @@ class Repository {
 
 	public function addRemote($remote) {
 
-		$console = new \Pdr\Ppm\Console2;
+		$console = new \Pdr\Ppm\Console;
 
 		$command  = $this->getGitCommand();
 		$command .= ' remote add'
@@ -63,7 +63,7 @@ class Repository {
 
 	public function checkout($branchName, $commitHash) {
 
-		$console = new \Pdr\Ppm\Console2;
+		$console = new \Pdr\Ppm\Console;
 
 		$command  = $this->getGitCommand();
 		$command .= ' clean --force -x';
@@ -109,7 +109,7 @@ class Repository {
 
 	public function addAllChanges() {
 
-		$console = new \Pdr\Ppm\Console2;
+		$console = new \Pdr\Ppm\Console;
 
 		$command  = $this->getGitCommand();
 		$command .= ' add --all';
@@ -119,7 +119,7 @@ class Repository {
 
 	public function commit($commitMessage) {
 
-		$console = new \Pdr\Ppm\Console2;
+		$console = new \Pdr\Ppm\Console;
 
 		// -- check committer info -----------------------------------------
 
@@ -246,7 +246,7 @@ class Repository {
 
 	public function getCurrentBranch() {
 
-		$console = new \Pdr\Ppm\Console2;
+		$console = new \Pdr\Ppm\Console;
 
 		$command  = $this->getGitCommand();
 		$command .= ' branch';
