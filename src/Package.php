@@ -39,6 +39,8 @@ class Package {
 
 	public function open(\Pdr\Ppm\Project $project, $packageName, $packageReference, $packageRepositoryUrl) {
 
+		$console = new \Pdr\Ppm\Console;
+
 		$packageVersion = $packageReference;
 
 		$this->project = $project;
@@ -59,7 +61,7 @@ class Package {
 					.' --work-tree '.$this->path
 					;
 				$commandText = $gitCommand.' config remote.origin.url';
-				$packageRepositoryUrl = \Pdr\Ppm\Console::text($commandText);
+				$packageRepositoryUrl = $console->text($commandText);
 				$packageRepositoryUrl = trim($packageRepositoryUrl);
 				$this->repositoryUrl = $packageRepositoryUrl;
 			}
@@ -75,7 +77,7 @@ class Package {
 				;
 
 			$commandText = $gitCommand.' log -n 1 --format=%H';
-			$packageCommitHash = \Pdr\Ppm\Console::text($commandText);
+			$packageCommitHash = $console->text($commandText);
 			$packageCommitHash = trim($packageCommitHash);
 			$this->commitHash = $packageCommitHash;
 		}
@@ -92,6 +94,7 @@ class Package {
 	public function create() {
 
 		$config = new \Pdr\Ppm\GlobalConfig;
+		$console = new \Pdr\Ppm\Console;
 
 		$project = $this->project;
 		$packageName = $this->name;
@@ -118,20 +121,20 @@ class Package {
 		if (is_dir($packagePath.'/.git') ==  FALSE){
 
 			$commandText = 'git init '.escapeshellarg($packagePath);
-			\Pdr\Ppm\Console::exec($commandText);
+			$console->exec($commandText);
 
 			$commandText = $gitCommand.' remote add origin '.escapeshellarg($packageRepositoryUrl);
-			\Pdr\Ppm\Console::exec($commandText);
+			$console->exec($commandText);
 
 			$commandText = $gitCommand.' fetch --depth=1 origin '.$packageVersion;
-			\Pdr\Ppm\Console::exec($commandText);
+			$console->exec($commandText);
 
 			$commandText = $gitCommand.' checkout origin/'.$packageVersion.' -b '.$packageVersion;
-			\Pdr\Ppm\Console::exec($commandText);
+			$console->exec($commandText);
 		}
 
 		$commandText = $gitCommand.' log -n 1 --format=%H HEAD';
-		$packageCommitHash = \Pdr\Ppm\Console::text($commandText);
+		$packageCommitHash = $console->text($commandText);
 		$packageCommitHash = trim($packageCommitHash);
 		$this->commitHash = $packageCommitHash;
 
