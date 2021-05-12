@@ -65,11 +65,8 @@ class Project {
 		return $this->config;
 	}
 
-	public function getLockConfig() {
-		$file = $this->getPath().'/composer.lock';
-		$lockConfig = new \Pdr\Ppm\LockConfig;
-		$lockConfig->load($file);
-		return $lockConfig;
+	public function getConfigLock() {
+		return $this->configLock;
 	}
 
 	public function getPath(){

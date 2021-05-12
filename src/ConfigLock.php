@@ -47,7 +47,7 @@ class ConfigLock {
 	public function open(\Pdr\Ppm\Project $project){
 
 		$this->project = $project;
-		$this->filePath = $this->project->getPath().'/ppm.lock.json';
+		$this->filePath = $this->project->getPath().'/composer.lock.json';
 
 		if (is_file($this->filePath)){
 			$fileText = file_get_contents($this->filePath);
@@ -107,7 +107,7 @@ class ConfigLock {
 
 		$project->packages = $packages;
 
-		$filePath = $this->project->getPath().'/ppm.lock.json';
+		$filePath = $this->filePath;
 		$fileText = json_encode($project, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 		$fileLines = array();
 		foreach (explode("\n", $fileText) as $fileLine){

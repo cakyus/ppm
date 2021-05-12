@@ -462,61 +462,10 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 	 * Update composer lock file
 	 **/
 
-	public function commandCreateLock(){
-
+	public function commandLock(){
 		$project = new \Pdr\Ppm\Project;
-		$composerLock = $project->getLockConfig();
-
-		foreach ($project->getPackages() as $package){
-
-			if ($package->name == 'php') {
-				continue;
-			}
-
-			if ( ( $repository = $package->getRepository() ) == false ){
-				throw new \Exception("package {$package->name} not installed");
-			}
-
-			if ($repository->hasChanges()){
-				throw new \Exception("package {$package->name} has changes");
-			}
-
-			$packageLockFound = false;
-			foreach ($composerLock->data->packages as $packageLock){
-				if ($packageLock->name == $package->name){
-					$packageLockFound = true;
-					$repositoryCurrentCommit = $repository->getCommitHash('HEAD');
-					if ($packageLock->source->reference != $repositoryCurrentCommit){
-						$packageLock->source->reference = $repositoryCurrentCommit;
-					}
-				}
-			}
-
-			if ($packageLockFound == false){
-				$repositoryCurrentCommit = $repository->getCommitHash('HEAD');
-				$composerLock->addPackage($package, $repositoryCurrentCommit);
-			}
-		}
-
-
-		foreach ($composerLock->data->packages as $packageIndex => $packageLock){
-
-			$packageFound = false;
-			foreach ($project->getPackages() as $package){
-				if ($packageLock->name == $package->name){
-					$packageFound = true;
-					break;
-				}
-			}
-
-			if ($packageFound == false) {
-				unset($composerLock->data->packages[$packageIndex]);
-			}
-		}
-
-		$composerLock->data->packages = array_values( $composerLock->data->packages );
-
-		$composerLock->save();
+		$configLock = $project->getConfigLock();
+		return $configLock->save();
 	}
 
 	/**
