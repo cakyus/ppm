@@ -69,6 +69,12 @@ class Project {
 		return $this->configLock;
 	}
 
+	public function getConfigGlobal() {
+		$configGlobal = new \Pdr\Ppm\ConfigGlobal;
+		$configGlobal->open($this);
+		return $configGlobal;
+	}
+
 	public function getPath(){
 		return $this->path;
 	}

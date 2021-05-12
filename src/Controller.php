@@ -47,7 +47,12 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 	}
 
 	public function commandInit() {
+
 		$this->initAutoload();
+
+		$project = new \Pdr\Ppm\Project;
+		$configGlobal = $project->getConfigGlobal();
+		$configGlobal->save();
 	}
 
 	/**
