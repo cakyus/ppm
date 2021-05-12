@@ -415,7 +415,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 				// local status
 
 				$commandText = $gitCommand.' status --short';
-				$commandLine = \Pdr\Ppm\Console::line($commandText);
+				$commandLine = $console->line($commandText);
 				if (\count($commandLine) == 0){
 					$localStatus = ' ';
 				} else {
@@ -423,7 +423,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 				}
 
 				$commandText = $gitCommand.' log -n 1 --format=%H';
-				$localCommitHash = \Pdr\Ppm\Console::text($commandText);
+				$localCommitHash = $console->text($commandText);
 
 				// remote status : local vs remote
 
