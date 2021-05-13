@@ -36,6 +36,7 @@ class ExceptionHandler {
 		$strpath = $strfile.':'.$errline;
 
 		fwrite(STDERR, date('H:i:s').' EXCEPTION '.$errstr.' '.$strpath."\n");
+		fwrite(STDERR, $errtrace."\n");
 		exit(1);
 	}
 }
