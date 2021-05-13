@@ -20,8 +20,7 @@ namespace Pdr\Ppm;
 class Console {
 
 	public function exec($command){
-		$option = new \Pdr\Ppm\Cli\Option;
-		if ($option->getOption('v')){
+		if (getenv('PHP_TRACE')) {
 			fwrite(STDERR, "> $command\n");
 		}
 		passthru($command, $exitCode);
@@ -31,8 +30,7 @@ class Console {
 	}
 
 	public function text($command){
-		$option = new \Pdr\Ppm\Cli\Option;
-		if ($option->getOption('v')){
+		if (getenv('PHP_TRACE')) {
 			fwrite(STDERR, "> $command\n");
 		}
 		exec($command, $outputLines, $exitCode);
@@ -44,8 +42,7 @@ class Console {
 	}
 
 	public function line($command){
-		$option = new \Pdr\Ppm\Cli\Option;
-		if ($option->getOption('v')){
+		if (getenv('PHP_TRACE')) {
 			fwrite(STDERR, "> $command\n");
 		}
 		exec($command, $outputLines, $exitCode);
