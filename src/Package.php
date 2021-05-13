@@ -60,10 +60,16 @@ class Package {
 					.' --git-dir '.$this->path.'/.git'
 					.' --work-tree '.$this->path
 					;
-				$commandText = $gitCommand.' config remote.origin.url';
-				$packageRepositoryUrl = $console->text($commandText);
-				$packageRepositoryUrl = trim($packageRepositoryUrl);
-				$this->repositoryUrl = $packageRepositoryUrl;
+				$commandText = $gitCommand.' remote';
+				$remotes = $console->line($commandText);
+				if (count($remotes) > 0 && $remotes[0] == 'origin') {
+					$commandText = $gitCommand.' config remote.origin.url';
+					$packageRepositoryUrl = $console->text($commandText);
+					$packageRepositoryUrl = trim($packageRepositoryUrl);
+					$this->repositoryUrl = $packageRepositoryUrl;
+				} else {
+					$this->repositoryUrl = NULL;
+				}
 			}
 		}
 
@@ -80,14 +86,6 @@ class Package {
 			$packageCommitHash = $console->text($commandText);
 			$packageCommitHash = trim($packageCommitHash);
 			$this->commitHash = $packageCommitHash;
-		}
-
-		if (empty($packageRepositoryUrl)){
-			trigger_error("Can not resolve packageRepositoryUrl"
-				."\n (packageName: $packageName, packageRepositoryUrl: $packageRepositoryUrl)"
-				, E_USER_ERROR
-				);
-			exit(1);
 		}
 	}
 
