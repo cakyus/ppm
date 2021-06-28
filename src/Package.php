@@ -91,7 +91,7 @@ class Package {
 
 	public function create() {
 
-		$config = new \Pdr\Ppm\GlobalConfig;
+		$config = new \Pdr\Ppm\ConfigGlobal;
 		$console = new \Pdr\Ppm\Console;
 
 		$project = $this->project;
