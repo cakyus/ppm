@@ -150,6 +150,7 @@ class Package {
 		// install dependencies
 
 		$packageConfigPath = $this->getPath().'/ppm.json';
+
 		if (is_file($packageConfigPath)){
 			$packageConfigText = file_get_contents($packageConfigPath);
 			$packageConfig = json_decode($packageConfigText);
@@ -157,9 +158,14 @@ class Package {
 				trigger_error(json_last_error_msg(), E_USER_WARNING);
 				throw new \Exception("JSON Parse Error. '$packageConfigPath'");
 			}
+
 			$attributeName = 'require';
 			if (empty($packageConfig->$attributeName) == FALSE){
 				foreach ($packageConfig->$attributeName as $packageItemName => $packageItemReference){
+					if ($packageItemName == 'php'){
+						// TODO check php version
+						continue;
+					}
 					if (isset($project->dependencyPackages[$packageItemName]) == FALSE){
 						$package = new \Pdr\Ppm\Package;
 						$package->open($this->project, $packageItemName, $packageItemReference, NULL);
@@ -167,6 +173,7 @@ class Package {
 					}
 				}
 			}
+
 			$attributeName = 'require-dev';
 			if (empty($packageConfig->$attributeName) == FALSE){
 				foreach ($packageConfig->$attributeName as $packageItemName => $packageItemReference){
