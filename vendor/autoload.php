@@ -1,6 +1,6 @@
 <?php
 
-function ppm_autoload($className){
+function ppm_autoload_03be68e1a6585f78286264ff4d806356($className){
 
 	$vendorDir = dirname(__FILE__);
 	$projectDir = dirname($vendorDir);
@@ -11,4 +11,4 @@ function ppm_autoload($className){
 	}
 }
 
-spl_autoload_register('ppm_autoload');
+spl_autoload_register('ppm_autoload_03be68e1a6585f78286264ff4d806356');
