@@ -88,7 +88,6 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		foreach ($project->getPackages() as $package) {
 			$packageName = $package->name;
-			fwrite(STDERR, "packageName $packageName\n");
 			if ($packageName == 'php'){
 				continue;
 			}
@@ -103,7 +102,6 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		foreach ($project->developmentPackages as $package) {
 			$packageName = $package->name;
-			fwrite(STDERR, "packageName $packageName\n");
 			if ($packageName == 'php'){
 				continue;
 			}
