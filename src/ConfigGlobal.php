@@ -109,8 +109,6 @@ class ConfigGlobal {
 
 	public function save() {
 
-		trigger_error("Generate ConfigGlobal '{$this->filePath}' ..", E_USER_NOTICE);
-
 		$project = new \stdClass;
 
 		foreach ($this->project->packages as $package){
