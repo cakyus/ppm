@@ -281,7 +281,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		if ($option->getCommandCount() == 0){
 
-			$lockConfig = $project->getLockConfig();
+			$lockConfig = $project->getConfigLock();
 
 			foreach ($project->getPackages() as $package){
 				if ($lockConfig && $packageData = $lockConfig->getPackage($package->name)) {
@@ -568,6 +568,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 					$this->commandExec($scriptItem);
 				}
 			} elseif (preg_match("/^([A-Z][^:]+)::([a-z].+)$/", $script, $match)){
+				// "build": "App\\Build\\Controller::start"
 				include_once($project->getVendorDir().'/autoload.php');
 				fwrite(STDERR, "> $scriptName => $script\n", E_USER_NOTICE);
 				$className = $match[1];
@@ -576,6 +577,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 				call_user_func(array($className, $functionName));
 				unset($_ENV['FCPATH']);
 			} else {
+				// "build": "make"
 				fwrite(STDERR, "> $scriptName => $script\n", E_USER_NOTICE);
 				passthru($script);
 			}
