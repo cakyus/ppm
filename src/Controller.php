@@ -40,7 +40,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		$commandName = 'command'.ucfirst($commandText);
 
 		if (method_exists($this, $commandName) == false){
-			return $this->commandExec($commandText);
+			return $this->commandExec($commandText, $arguments);
 		}
 
 		call_user_func_array(array($this, $commandName), $arguments);
@@ -569,7 +569,11 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 	 * Execute composer scripts
 	 **/
 
-	public function commandExec($commandText) {
+	public function commandExec($commandText, $arguments = NULL) {
+
+		if (is_null($arguments) == TRUE){
+			$arguments = array();
+		}
 
 		$project = new \Pdr\Ppm\Project;
 
@@ -597,7 +601,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 				$className = $match[1];
 				$functionName = $match[2];
 				$_ENV['FCPATH'] = $project->getPath();
-				call_user_func(array($className, $functionName));
+				call_user_func_array(array($className, $functionName), $arguments);
 				unset($_ENV['FCPATH']);
 			} else {
 				// "build": "make"
