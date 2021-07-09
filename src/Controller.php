@@ -139,11 +139,33 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			throw new \Exception("JSON Parse Error. '$composerFile'");
 		}
 
-		if (isset($data['autoload']) == FALSE) {
-			return $autoloadText;
+		$autoloadData = array();
+
+		if (isset($data['autoload'])){
+			foreach ($data['autoload'] as $method => $autoload){
+				$autoloadItem = new \stdClass;
+				foreach ($autoload as $autoloadName => $autoloadValue){
+					$autoloadItem->$autoloadName = $autoloadValue;
+				}
+				$autoloadData[$method] = $autoloadItem;
+			}
 		}
 
-		foreach ($data['autoload'] as $method => $autoload){
+		if (isset($data['autoload-dev'])){
+			foreach ($data['autoload-dev'] as $method => $autoload){
+				if (isset($autoloadData[$method])){
+					$autoloadItem = $autoloadData[$method];
+				} else {
+					$autoloadItem = new \stdClass;
+				}
+				foreach ($autoload as $autoloadName => $autoloadValue){
+					$autoloadItem->$autoloadName = $autoloadValue;
+				}
+				$autoloadData[$method] = $autoloadItem;
+			}
+		}
+
+		foreach ($autoloadData as $method => $autoload){
 
 			// classmap
 
