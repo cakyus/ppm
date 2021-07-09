@@ -63,8 +63,6 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		$project = new \Pdr\Ppm\Project;
 
-		trigger_error("Generate autoload file ..", E_USER_NOTICE);
-
 		$autoloadFunctionName = 'ppm_autoload';
 
 		$autoloadFile = $project->getVendorDir().'/autoload.php';
@@ -75,9 +73,10 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 		$autoloadText .= "\t\$vendorDir = dirname(__FILE__);\n";
 		$autoloadText .= "\t\$projectDir = dirname(\$vendorDir);\n\n";
 
-		$composerFile = $project->getPath().'/ppm.json';
+		$composerFile = $project->getPath().'/composer.json';
 		if (is_file($composerFile) == FALSE){
-			$composerFile = $project->getPath().'/composer.json';
+			$composerFile = $project->getPath().'/ppm.json';
+			trigger_error("$composerFile is deprecated", E_USER_DEPRECATED);
 		}
 
 		$packageDir = '$projectDir';
@@ -89,12 +88,14 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		foreach ($project->getPackages() as $package) {
 			$packageName = $package->name;
+			fwrite(STDERR, "packageName $packageName\n");
 			if ($packageName == 'php'){
 				continue;
 			}
-			$composerFile = $project->getVendorDir().'/'.$packageName.'/ppm.json';
+			$composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
 			if (is_file($composerFile) == FALSE){
-				$composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
+				$composerFile = $project->getVendorDir().'/'.$packageName.'/ppm.json';
+				trigger_error("$composerFile is deprecated", E_USER_DEPRECATED);
 			}
 			$packageDir = '$vendorDir.\'/'.$packageName.'\'';
 			$autoloadText .= $this->initAutoloadFile($packageDir, $composerFile);
@@ -102,12 +103,14 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		foreach ($project->developmentPackages as $package) {
 			$packageName = $package->name;
+			fwrite(STDERR, "packageName $packageName\n");
 			if ($packageName == 'php'){
 				continue;
 			}
-			$composerFile = $project->getVendorDir().'/'.$packageName.'/ppm.json';
+			$composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
 			if (is_file($composerFile) == FALSE){
-				$composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
+				$composerFile = $project->getVendorDir().'/'.$packageName.'/ppm.json';
+				trigger_error("$composerFile is deprecated", E_USER_DEPRECATED);
 			}
 			$packageDir = '$vendorDir.\'/'.$packageName.'\'';
 			$autoloadText .= $this->initAutoloadFile($packageDir, $composerFile);
