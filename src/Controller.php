@@ -590,23 +590,29 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 				continue;
 			}
 
-			if (is_array($script)){
-				foreach ($script as $scriptItem){
-					$this->commandExec($scriptItem);
-				}
-			} elseif (preg_match("/^([A-Z][^:]+)::([a-z].+)$/", $script, $match)){
-				// "build": "App\\Build\\Controller::start"
-				include_once($project->getVendorDir().'/autoload.php');
-				fwrite(STDERR, "> $scriptName => $script\n", E_USER_NOTICE);
-				$className = $match[1];
-				$functionName = $match[2];
-				$_ENV['FCPATH'] = $project->getPath();
-				call_user_func_array(array($className, $functionName), $arguments);
-				unset($_ENV['FCPATH']);
+			$scriptData = array();
+
+			if (is_array($script) == FALSE){
+				$scriptData = array($script);
 			} else {
-				// "build": "make"
-				fwrite(STDERR, "> $scriptName => $script\n", E_USER_NOTICE);
-				passthru($script);
+				$scriptData = $script;
+			}
+
+			foreach ($scriptData as $scriptItem){
+				 if (preg_match("/^([A-Z][^:]+)::([a-z].+)$/", $scriptItem, $match)){
+					// "build": "App\\Build\\Controller::start"
+					include_once($project->getVendorDir().'/autoload.php');
+					fwrite(STDERR, "> $scriptName => $scriptItem\n", E_USER_NOTICE);
+					$className = $match[1];
+					$functionName = $match[2];
+					$_ENV['FCPATH'] = $project->getPath();
+					call_user_func_array(array($className, $functionName), $arguments);
+					unset($_ENV['FCPATH']);
+				} else {
+					// "build": "make"
+					fwrite(STDERR, "> $scriptName => $scriptItem\n", E_USER_NOTICE);
+					passthru($scriptItem);
+				}
 			}
 
 			$commandFound = TRUE;
