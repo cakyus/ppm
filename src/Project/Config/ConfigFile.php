@@ -26,22 +26,34 @@ class ConfigFile extends \Pdr\Ppm\Common\Attribute {
 	}
 
 	public function loadFile($filePath) {
-		if (is_file($filePath)){
+
+		$this->_filePath = $filePath;
+
+		if (is_file($filePath) == FALSE){
 			return FALSE;
 		}
+
 		if ( ! $fileText = file_get_contents($filePath)){
 			return FALSE;
 		}
+
 		$fileData = json_decode($fileText);
 		if (json_last_error() !== JSON_ERROR_NONE){
 			return FALSE;
 		}
-		$this->_filePath = $filePath;
+
+		$this->loadObject($fileData);
+
 		return TRUE;
 	}
 
+	public function getFilePath() {
+		return $this->_filePath;
+	}
+
 	public function save() {
-		$fileText = json_encode($this->saveObject());
+		$fileData = $this->saveObject();
+		$fileText = json_encode($fileData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 		return file_put_contents($this->_filePath, $fileText);
 	}
 }

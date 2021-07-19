@@ -70,13 +70,13 @@ class Project {
 	public function config($configType) {
 
 		if ($configType == 'local'){
-			$configFile = WORKDIR.'/.composer.json';
+			$configFile = WORKDIR.'/composer.json';
 			$config = new \Pdr\Ppm\Project\Config\ConfigLocal;
 		} elseif ($configType == 'lock') {
-			$configFile = WORKDIR.'/.composer.lock.json';
+			$configFile = WORKDIR.'/composer.lock.json';
 			$config = new \Pdr\Ppm\Project\Config\ConfigLock;
 		} elseif ($configType == 'global') {
-			$configFile = $_SERVER['HOME'].'/.config/composer/config.json';
+			$configFile = $_SERVER['HOME'].'/.composer.json';
 			$config = new \Pdr\Ppm\Project\Config\ConfigGlobal;
 		} elseif (is_file($configType)){
 			$configFile = $configType;

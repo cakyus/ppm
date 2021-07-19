@@ -18,6 +18,7 @@
 namespace Pdr\Ppm\Project\Config;
 
 /**
+ * @see docs/config.local.json
  * @link https://getcomposer.org/doc/04-schema.md
  **/
 
@@ -33,8 +34,44 @@ class ConfigLocal extends \Pdr\Ppm\Project\Config\ConfigFile {
 
 	public function loadFile($filePath) {
 
-		if (parent::loadFile($filePath) == FALSE){
-			return FALSE;
+		if (parent::loadFile($filePath) === FALSE){
+			throw new \Exception("Load local configuration failed");
+		}
+
+		if (empty($this->name)){
+			throw new \Exception("Project name is not defined");
+		}
+
+		// Version should determited by version control.
+		// Specifying the version yourself will most likely end up
+		// creating problems at some point due to human error.
+
+		if (empty($this->version) == FALSE){
+			throw new \Exception("Project version should not defined");
+		}
+
+		if (empty($this->license)){
+			throw new \Exception("Project license is not defined");
+		}
+
+		$attributeName = 'require';
+		if (empty($this->$attributeName)){
+			$this->$attributeName = new \stdClass;
+		}
+
+		$attributeName = 'require-dev';
+		if (empty($this->$attributeName)){
+			$this->$attributeName = new \stdClass;
+		}
+
+		$attributeName = 'autoload';
+		if (empty($this->$attributeName)){
+			$this->$attributeName = new \stdClass;
+		}
+
+		$attributeName = 'autoload-dev';
+		if (empty($this->$attributeName)){
+			$this->$attributeName = new \stdClass;
 		}
 
 		return TRUE;

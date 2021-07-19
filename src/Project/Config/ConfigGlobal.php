@@ -29,8 +29,10 @@ class ConfigGlobal extends \Pdr\Ppm\Project\Config\ConfigFile {
 
 	public function loadFile($filePath) {
 
-		if (parent::loadFile($filePath) == FALSE){
-			return FALSE;
+		parent::loadFile($filePath);
+
+		if (empty($this->repositories)){
+			$this->repositories = array();
 		}
 
 		return TRUE;

@@ -306,6 +306,221 @@ class Package {
 			;
 	}
 
+	public function install($composerFile) {
+
+		$project = new \Pdr\Ppm\Project;
+		$option = new \Pdr\Ppm\Cli\Option;
+
+		$configFile = $project->config($composerFile);
+
+		// get required packages
+		// TODO compare package reference compatibility
+
+		$attributeName = 'require';
+		foreach ($configFile->$attributeName as $packageName => $packageReference){
+			if ($packageName == 'php'){
+				trigger_error("PHP version check not yet supported", E_USER_WARNING);
+				continue;
+			}
+			if (substr($packageName,0,4) == 'ext-'){
+				trigger_error("PHP extension version check not yet supported", E_USER_WARNING);
+				continue;
+			}
+			$package = new \stdClass;
+			$package->name = $packageName;
+			$package->reference = $packageReference;
+			$packages[$packageName] = $package;
+		}
+
+		if ($option->getOption('dev')){
+			$attributeName = 'require-dev';
+			foreach ($configFile->$attributeName as $packageName => $packageReference){
+				if ($packageName == 'php'){
+					trigger_error("PHP version check not yet supported", E_USER_WARNING);
+					continue;
+				}
+				if (substr($packageName,0,4) == 'ext-'){
+					trigger_error("PHP extension version check not yet supported", E_USER_WARNING);
+					continue;
+				}
+				$package = new \stdClass;
+				$package->name = $packageName;
+				$package->reference = $packageReference;
+				$packages[$packageName] = $package;
+			}
+		}
+
+		// resolve packageUrl
+
+		$configGlobal = $project->config('global');
+
+		foreach ($packages as $package){
+
+			// set package version
+			// Not yet supported: "1.*"
+			if (strpos($package->reference, '*') !== FALSE){
+				throw new \Exception("Package reference {$package->reference} not yet supported");
+			}
+
+			$package->version = $package->reference;
+
+			foreach ($configGlobal->repositories as $repository){
+
+				if (	empty($repository->type) == TRUE
+					||	$repository->type != 'package'
+					||	empty($repository->package) == TRUE
+					||	empty($repository->package->name) == TRUE
+					||	empty($repository->package->version) == TRUE
+					||	empty($repository->package->source) == TRUE
+					||	empty($repository->package->source->type) == TRUE
+					||	empty($repository->package->source->url) == TRUE
+					){
+					continue;
+				}
+
+				if (	$repository->package->source->type != 'cvs'
+					&&	$repository->package->source->type != 'git'
+					){
+					trigger_error("Unsupported package source type ({$repository->package->source->type})", E_USER_WARNING);
+					continue;
+				}
+
+				if (	$package->name == $repository->package->name
+					&&	$package->version == $repository->package->version
+					){
+					if (empty($package->url) == FALSE){
+						throw new \Exception("package url already defined as {$package->url} ({$repository->package->source->url})");
+					}
+					$package->url = $repository->package->source->url;
+					break;
+				}
+			}
+
+			if (empty($package->url)){
+				throw new \Exception("Can not resolve packageUrl for {$package->name}:{$package->version}");
+			}
+		}
+
+		// resolve packageCommit
+
+		$configLock = $project->config('lock');
+		foreach ($packages as $package){
+			if ($packageLock = $configLock->getPackage($package->name)){
+				if (	$packageLock->name == $package->name
+					&&	$packageLock->version == $package->version
+					){
+					$package->source = new \stdClass;
+					$package->source->type = 'cvs';
+					$package->source->reference = $packageLock->source->reference;
+				}
+			}
+		}
+
+		// install package
+
+		foreach ($packages as $package){
+			$this->installPackage($package);
+		}
+	}
+
+	public function installPackage($package) {
+
+		trigger_error("Installing {$package->name}:{$package->version}", E_USER_NOTICE);
+
+		foreach (array(
+			  WORKDIR.'/vendor'
+			, WORKDIR.'/vendor/'.dirname($package->name)
+			, WORKDIR.'/vendor/'.$package->name
+			) as $folderPath){
+
+			if (is_dir($folderPath) == FALSE){
+				mkdir($folderPath);
+			}
+		}
+
+		if (is_dir(WORKDIR.'/vendor/'.$package->name.'/.git')){
+			trigger_error("Package {$package->name} already installed", E_USER_NOTICE);
+		}
+
+		$console = new \Pdr\Ppm\Console;
+
+		$binGit = 'git'
+			.' --git-dir='.WORKDIR.'/vendor/'.$package->name.'/.git'
+			.' --work-tree='.WORKDIR.'/vendor/'.$package->name
+			;
+
+		$commandText = "$binGit init";
+		$console->exec($commandText);
+
+		$commandText = "$binGit remote add origin {$package->url}";
+		$console->exec($commandText);
+
+		if (empty($package->source->reference)){
+
+			// commit hash is not specified
+			// fetch the last commit of the version
+
+			$commandText = "$binGit fetch --depth=1 origin {$package->version}";
+			$console->exec($commandText);
+
+			$commandText = "$binGit checkout -b {$package->version} origin/{$package->version}";
+			$console->exec($commandText);
+
+			$commandText = "$binGit log --format=%H origin/{$package->version}";
+			$packageCommit = $console->text($commandText);
+
+			$project = new \Pdr\Ppm\Project;
+			$config = $project->config('lock');
+			$config->setPackage($package->name, $package->version, $packageCommit);
+			$config->save();
+
+			return TRUE;
+		}
+
+		// commit hash is not specified
+		// but we do not know how many fetch needed to reach commit hash
+
+		// fetch incremental $depth commit
+		$fetchDepth = 10;
+
+		// the first commit of current version / branch
+		$versionCommit = NULL;
+		// the commit depth of current version / branch
+		$depth = 1;
+
+		while (TRUE){
+
+			$commandText = "$binGit fetch --depth=$depth origin {$package->version}";
+			$console->exec($commandText);
+
+			$commandText = "$binGit rev-list --max-parents=0 origin/{$package->version}";
+			$commit = $console->text($commandText);
+			if (is_null($versionCommit)){
+				$versionCommit = $commit;
+			} elseif ($versionCommit == $commit){
+				throw new \Exception("Commit {$package->source->reference} not found in {$package->version} ");
+			} else {
+				$versionCommit = $commit;
+			}
+
+			$commandText = "$binGit rev-list origin/{$package->version} | grep {$package->source->reference} || true";
+			$packageCommit = $console->text($commandText);
+
+			if ($packageCommit){
+				// commit found in rev-list
+				break;
+			}
+
+			$depth += $fetchDepth;
+		}
+
+		$commandText = "$binGit checkout -b {$package->version} {$package->source->reference}";
+		$console->exec($commandText);
+
+		$commandText = "$binGit branch --set-upstream-to=origin/{$package->version}";
+		$console->exec($commandText);
+	}
+
 	public function update() {
 
 		fwrite(STDOUT, "Update {$this->name} {$this->version} {$this->repositoryUrl} ..\n");

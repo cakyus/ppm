@@ -304,21 +304,14 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		if ($option->getCommandCount() == 0){
 
-			$lockConfig = $project->getConfigLock();
+			$package = new \Pdr\Ppm\Package;
+			$config = $project->config('local');
+			$package->install($config->getFilePath());
 
-			foreach ($project->getPackages() as $package){
-				if ($lockConfig && $packageData = $lockConfig->getPackage($package->name)) {
-					$package->install( $packageData->source->reference );
-				} else {
-					$package->install();
-				}
-			}
-
-			// generate autoload
 			$this->initAutoload();
 
 			// execute post install command
-			$this->commandExec('post-install-cmd');
+			// $this->commandExec('post-install-cmd');
 
 		} elseif ($option->getCommandCount() == 1) {
 
