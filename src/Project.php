@@ -61,6 +61,35 @@ class Project {
 		$this->configPackage = $configPackage;
 	}
 
+	/**
+	 * Provide access to configuration
+	 *
+	 * @param string $type configuration type, ie. "local", "global", "lock", <file>
+	 **/
+
+	public function config($configType) {
+
+		if ($configType == 'local'){
+			$configFile = WORKDIR.'/.composer.json';
+			$config = new \Pdr\Ppm\Project\Config\ConfigLocal;
+		} elseif ($configType == 'lock') {
+			$configFile = WORKDIR.'/.composer.lock.json';
+			$config = new \Pdr\Ppm\Project\Config\ConfigLock;
+		} elseif ($configType == 'global') {
+			$configFile = $_SERVER['HOME'].'/.config/composer/config.json';
+			$config = new \Pdr\Ppm\Project\Config\ConfigGlobal;
+		} elseif (is_file($configType)){
+			$configFile = $configType;
+			$config = new \Pdr\Ppm\Project\Config\ConfigFile;
+		} else {
+			throw new \Exception("Can not resolve configuration ($configType)");
+		}
+
+		$config->loadFile($configFile);
+
+		return $config;
+	}
+
 	public function getConfig(){
 		return $this->config;
 	}
