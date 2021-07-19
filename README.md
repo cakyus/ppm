@@ -1,3 +1,7 @@
+# PHP Package Manager
+
+This project is unstable and subject changes. Use it at your own risk.
+
 ## Configurations
 
 | File | Description |
