@@ -1,2 +1,14 @@
 {
+	"name": "projectName",
+	"version": "projectVersion",
+	"license": "GPL-2.0-only",
+	"require": {
+		"packagaName": "packageVersion"
+	},
+	"require-dev": {
+		"packagaName": "packageVersion"
+	},
+	"autoload": {}
+	"autoload-dev": {}
+	"scripts": {}
 }

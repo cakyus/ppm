@@ -2,11 +2,13 @@
 	"repositories": [
 		{
 			"type": "package",
-			"name": "smarty/smarty",
-			"version": "3.1.7",
-			"source": {
-				"url": "https://smarty-php.googlecode.com/svn/",
-				"type": "svn"
+			"package": {
+				"name": "smarty/smarty",
+				"version": "3.1.7",
+				"source": {
+					"url": "https://smarty-php.googlecode.com/svn/",
+					"type": "svn"
+				}
 			}
 		}
 	]
