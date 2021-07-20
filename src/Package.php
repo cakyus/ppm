@@ -392,6 +392,7 @@ class Package {
 		if ($packageLock = $configLock->getPackage($package->name)){
 			if (	$packageLock->name == $package->name
 				&&	$packageLock->version == $package->version
+				&&	empty($packageLock->source->reference) == FALSE
 				){
 				$package->source = new \stdClass;
 				$package->source->type = 'cvs';
@@ -400,7 +401,27 @@ class Package {
 			}
 		}
 
-		return FALSE;
+		if (is_dir(WORKDIR.'/vendor/'.$package->name.'/.git') == FALSE){
+			return FALSE;
+		}
+
+
+		$console = new \Pdr\Ppm\Console;
+
+		$binGit = 'git'
+			.' --git-dir='.WORKDIR.'/vendor/'.$package->name.'/.git'
+			.' --work-tree='.WORKDIR.'/vendor/'.$package->name
+			;
+
+		$commandText = "$binGit log --format=%H origin/{$package->version}";
+
+		$packageCommit = $console->text($commandText);
+
+		$package->source = new \stdClass;
+		$package->source->type = 'cvs';
+		$package->source->reference = $packageCommit;
+
+		return TRUE;
 	}
 
 	public function installPackage($package) {
@@ -419,12 +440,28 @@ class Package {
 		}
 
 		if (is_dir(WORKDIR.'/vendor/'.$package->name.'/.git')){
-			return TRUE;
+			// do nothing
 		} elseif (empty($package->source->reference)){
 			$this->installPackageVersion($package);
 		} else {
 			$this->installPackageCommit($package);
 		}
+
+		// update package lock
+
+		if (empty($package->source->reference)){
+			// try to get package commit
+			$this->setCommit($package);
+		}
+
+		if (empty($package->source->reference)){
+			throw new \Exception("Invalid package. ".var_export($package, TRUE));
+		}
+
+		$project = new \Pdr\Ppm\Project;
+		$config = $project->config('lock');
+		$config->setPackage($package->name, $package->version, $package->source->reference);
+		$config->save();
 
 		// install dependencies
 
@@ -466,10 +503,9 @@ class Package {
 		$commandText = "$binGit log --format=%H origin/{$package->version}";
 		$packageCommit = $console->text($commandText);
 
-		$project = new \Pdr\Ppm\Project;
-		$config = $project->config('lock');
-		$config->setPackage($package->name, $package->version, $packageCommit);
-		$config->save();
+		$package->source = new \stdClass;
+		$package->source->type = 'cvs';
+		$package->source->reference = $packageCommit;
 	}
 
 	public function installPackageCommit($package) {
