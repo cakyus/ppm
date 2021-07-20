@@ -52,8 +52,23 @@ class ConfigFile extends \Pdr\Ppm\Common\Attribute {
 	}
 
 	public function save() {
+
 		$fileData = $this->saveObject();
 		$fileText = json_encode($fileData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+		// replace 4 spaces to 2 spaces
+
+		$fileLine = explode("\n", $fileText);
+		foreach ($fileLine as $fileLineIndex => $fileLineItem){
+			if (preg_match("/^( +)(.+)$/", $fileLineItem, $match) == FALSE){
+				continue;
+			}
+			$fileLine[$fileLineIndex] = str_repeat(' ', strlen($match[1]) / 2).$match[2];
+		}
+		$fileText = implode("\n", $fileLine);
+
+		// write to file
+
 		return file_put_contents($this->_filePath, $fileText);
 	}
 }
