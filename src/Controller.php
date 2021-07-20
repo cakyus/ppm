@@ -86,21 +86,8 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			mkdir(dirname($autoloadFile));
 		}
 
-		foreach ($project->getPackages() as $package) {
-			$packageName = $package->name;
-			if ($packageName == 'php'){
-				continue;
-			}
-			$composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
-			if (is_file($composerFile) == FALSE){
-				$composerFile = $project->getVendorDir().'/'.$packageName.'/ppm.json';
-				trigger_error("$composerFile is deprecated", E_USER_DEPRECATED);
-			}
-			$packageDir = '$vendorDir.\'/'.$packageName.'\'';
-			$autoloadText .= $this->initAutoloadFile($packageDir, $composerFile);
-		}
-
-		foreach ($project->developmentPackages as $package) {
+		$configLock = $project->config('lock');
+		foreach ($configLock->packages as $package) {
 			$packageName = $package->name;
 			if ($packageName == 'php'){
 				continue;
