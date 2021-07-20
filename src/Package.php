@@ -306,23 +306,9 @@ class Package {
 			;
 	}
 
-	public function install($composerFile) {
-
-		$project = new \Pdr\Ppm\Project;
-		$option = new \Pdr\Ppm\Cli\Option;
-
-		$configFile = $project->config($composerFile);
-
-
-// 		$packages = $this->findPackage($composerFile);
-// 		$packages = $this->findVersion($packages);
-// 		$packages = $this->findRepositoryUrl($packages);
-// 		$packages = $this->findCommit($packages);
-// 		foreach ($packages as $package){
-// 			$this->installPackage($package);
-// 		}
-
-		foreach ($this->findPackage($composerFile) as $package){
+	public function install($configLocal) {
+		$configFilePath = $configLocal->getFilePath();
+		foreach ($this->findPackage($configFilePath) as $package){
 			$this->setVersion($package);
 			$this->setRepositoryUrl($package);
 			$this->setCommit($package);
