@@ -54,26 +54,58 @@ class ConfigLocal extends \Pdr\Ppm\Project\Config\ConfigFile {
 			throw new \Exception("Project license is not defined");
 		}
 
-		$attributeName = 'require';
-		if (empty($this->$attributeName)){
-			$this->$attributeName = new \stdClass;
-		}
-
-		$attributeName = 'require-dev';
-		if (empty($this->$attributeName)){
-			$this->$attributeName = new \stdClass;
-		}
-
-		$attributeName = 'autoload';
-		if (empty($this->$attributeName)){
-			$this->$attributeName = new \stdClass;
-		}
-
-		$attributeName = 'autoload-dev';
-		if (empty($this->$attributeName)){
-			$this->$attributeName = new \stdClass;
-		}
+		$this->setDefaultValues();
 
 		return TRUE;
 	}
+
+	protected function setDefaultValues() {
+		foreach (array(
+			'require'
+			, 'require-dev'
+			, 'autoload'
+			, 'autoload-dev'
+			) as $attributeName){
+			if (empty($this->$attributeName)){
+				$this->$attributeName = new \stdClass;
+			}
+		}
+	}
+
+	public function setPackage($packageName, $packageReference) {
+
+		$option = new \Pdr\Ppm\Cli\Option;
+		if ($option->getOption('dev')){
+			$attributeName = 'require-dev';
+		} else {
+			$attributeName = 'require';
+		}
+
+		$this->$attributeName->$packageName = $packageReference;
+	}
+
+	public function save() {
+
+		// remove empty attributes temporarily
+
+		foreach (array(
+			'require'
+			, 'require-dev'
+			, 'autoload'
+			, 'autoload-dev'
+			) as $attributeName){
+			$attributeItemCount = 0;
+			foreach ($this->$attributeName as $attributeItemValue){
+				$attributeItemCount++;
+			}
+			if ($attributeItemCount == 0){
+				unset($this->_attributes[$attributeName]);
+			}
+		}
+
+		parent::save();
+
+		$this->setDefaultValues();
+	}
+
 }
