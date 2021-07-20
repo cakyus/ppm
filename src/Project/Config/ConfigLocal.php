@@ -72,6 +72,10 @@ class ConfigLocal extends \Pdr\Ppm\Project\Config\ConfigFile {
 		}
 	}
 
+	public function getPackages() {
+
+	}
+
 	public function setPackage($packageName, $packageReference) {
 
 		$option = new \Pdr\Ppm\Cli\Option;
@@ -84,9 +88,11 @@ class ConfigLocal extends \Pdr\Ppm\Project\Config\ConfigFile {
 		$this->$attributeName->$packageName = $packageReference;
 	}
 
-	public function save() {
+	public function saveObject() {
 
-		// remove empty attributes temporarily
+		$object = parent::saveObject();
+
+		// remove empty attributes
 
 		foreach (array(
 			'require'
@@ -95,17 +101,14 @@ class ConfigLocal extends \Pdr\Ppm\Project\Config\ConfigFile {
 			, 'autoload-dev'
 			) as $attributeName){
 			$attributeItemCount = 0;
-			foreach ($this->$attributeName as $attributeItemValue){
+			foreach ($object->$attributeName as $attributeItemValue){
 				$attributeItemCount++;
 			}
 			if ($attributeItemCount == 0){
-				unset($this->_attributes[$attributeName]);
+				unset($object->$attributeName);
 			}
 		}
 
-		parent::save();
-
-		$this->setDefaultValues();
+		return $object;
 	}
-
 }
