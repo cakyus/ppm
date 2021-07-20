@@ -503,10 +503,10 @@ class Package {
 				$versionCommit = $commit;
 			}
 
-			$commandText = "$binGit rev-list origin/{$package->version} | grep {$package->source->reference} || true";
-			$packageCommit = $console->text($commandText);
+			$commandText = "$binGit rev-list origin/{$package->version}";
+			$packageCommits = $console->line($commandText);
 
-			if ($packageCommit){
+			if (in_array($package->source->reference, $packageCommits)){
 				// commit found in rev-list
 				break;
 			}
