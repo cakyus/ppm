@@ -463,6 +463,7 @@ class Package {
 
 		if (is_dir(WORKDIR.'/vendor/'.$package->name.'/.git')){
 			trigger_error("Package {$package->name} already installed", E_USER_NOTICE);
+			return TRUE;
 		}
 
 		$console = new \Pdr\Ppm\Console;
