@@ -463,8 +463,19 @@ class Package {
 
 		if (is_dir(WORKDIR.'/vendor/'.$package->name.'/.git')){
 			trigger_error("Package {$package->name} already installed", E_USER_NOTICE);
-			return TRUE;
+		} elseif (empty($package->source->reference)){
+			$this->installPackageVersion($package);
+		} else {
+			$this->installPackageCommit($package);
 		}
+
+		// install dependencies
+		if (is_file(WORKDIR.'/vendor/'.$package->name.'/composer.json')){
+
+		}
+	}
+
+	public function installPackageVersion($package) {
 
 		$console = new \Pdr\Ppm\Console;
 
@@ -479,27 +490,38 @@ class Package {
 		$commandText = "$binGit remote add origin {$package->url}";
 		$console->exec($commandText);
 
-		if (empty($package->source->reference)){
+		// commit hash is not specified
+		// fetch the last commit of the version
 
-			// commit hash is not specified
-			// fetch the last commit of the version
+		$commandText = "$binGit fetch --depth=1 origin {$package->version}";
+		$console->exec($commandText);
 
-			$commandText = "$binGit fetch --depth=1 origin {$package->version}";
-			$console->exec($commandText);
+		$commandText = "$binGit checkout -b {$package->version} origin/{$package->version}";
+		$console->exec($commandText);
 
-			$commandText = "$binGit checkout -b {$package->version} origin/{$package->version}";
-			$console->exec($commandText);
+		$commandText = "$binGit log --format=%H origin/{$package->version}";
+		$packageCommit = $console->text($commandText);
 
-			$commandText = "$binGit log --format=%H origin/{$package->version}";
-			$packageCommit = $console->text($commandText);
+		$project = new \Pdr\Ppm\Project;
+		$config = $project->config('lock');
+		$config->setPackage($package->name, $package->version, $packageCommit);
+		$config->save();
+	}
 
-			$project = new \Pdr\Ppm\Project;
-			$config = $project->config('lock');
-			$config->setPackage($package->name, $package->version, $packageCommit);
-			$config->save();
+	public function installPackageCommit($package) {
 
-			return TRUE;
-		}
+		$console = new \Pdr\Ppm\Console;
+
+		$binGit = 'git'
+			.' --git-dir='.WORKDIR.'/vendor/'.$package->name.'/.git'
+			.' --work-tree='.WORKDIR.'/vendor/'.$package->name
+			;
+
+		$commandText = "$binGit init";
+		$console->exec($commandText);
+
+		$commandText = "$binGit remote add origin {$package->url}";
+		$console->exec($commandText);
 
 		// commit hash is not specified
 		// but we do not know how many fetch needed to reach commit hash
