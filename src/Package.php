@@ -313,27 +313,46 @@ class Package {
 
 		$configFile = $project->config($composerFile);
 
+
+// 		$packages = $this->findPackage($composerFile);
+// 		$packages = $this->findVersion($packages);
+// 		$packages = $this->findRepositoryUrl($packages);
+// 		$packages = $this->findCommit($packages);
+// 		foreach ($packages as $package){
+// 			$this->installPackage($package);
+// 		}
+
+		foreach ($this->findPackage($composerFile) as $package){
+			$this->setVersion($package);
+			$this->setRepositoryUrl($package);
+			$this->setCommit($package);
+			$this->installPackage($package);
+		}
+	}
+
+	/**
+	 * Find packages in a composer file
+	 * @return array
+	 **/
+
+	public function findPackage($composerFile) {
+
+		$project = new \Pdr\Ppm\Project;
+		$option = new \Pdr\Ppm\Cli\Option;
+
+		$configFile = $project->config($composerFile);
+
 		// get required packages
 		// TODO compare package reference compatibility
 
-		$attributeName = 'require';
-		foreach ($configFile->$attributeName as $packageName => $packageReference){
-			if ($packageName == 'php'){
-				trigger_error("PHP version check not yet supported", E_USER_WARNING);
-				continue;
-			}
-			if (substr($packageName,0,4) == 'ext-'){
-				trigger_error("PHP extension version check not yet supported", E_USER_WARNING);
-				continue;
-			}
-			$package = new \stdClass;
-			$package->name = $packageName;
-			$package->reference = $packageReference;
-			$packages[$packageName] = $package;
+		$attributeNames = array('require');
+		if ($option->getOption('dev')){
+			$attributeNames[] = 'require-dev';
 		}
 
-		if ($option->getOption('dev')){
-			$attributeName = 'require-dev';
+		$packages = array();
+
+		foreach ($attributeNames as $attributeName){
 			foreach ($configFile->$attributeName as $packageName => $packageReference){
 				if ($packageName == 'php'){
 					trigger_error("PHP version check not yet supported", E_USER_WARNING);
@@ -350,77 +369,95 @@ class Package {
 			}
 		}
 
-		// resolve packageUrl
+		return $packages;
+	}
 
+	/**
+	 * Resolve version from reference
+	 **/
+
+	public function setVersion($package) {
+
+		// set package version
+		// Not yet supported: "1.*"
+		if (strpos($package->reference, '*') !== FALSE){
+			throw new \Exception("Package reference {$package->reference} not yet supported");
+		}
+
+		$package->version = $package->reference;
+
+		return TRUE;
+	}
+
+	/**
+	 * Resolve repositoryUrl
+	 **/
+
+	public function setRepositoryUrl($package) {
+
+		$project = new \Pdr\Ppm\Project;
 		$configGlobal = $project->config('global');
 
-		foreach ($packages as $package){
+		foreach ($configGlobal->repositories as $repository){
 
-			// set package version
-			// Not yet supported: "1.*"
-			if (strpos($package->reference, '*') !== FALSE){
-				throw new \Exception("Package reference {$package->reference} not yet supported");
+			if (	empty($repository->type) == TRUE
+				||	$repository->type != 'package'
+				||	empty($repository->package) == TRUE
+				||	empty($repository->package->name) == TRUE
+				||	empty($repository->package->version) == TRUE
+				||	empty($repository->package->source) == TRUE
+				||	empty($repository->package->source->type) == TRUE
+				||	empty($repository->package->source->url) == TRUE
+				){
+				continue;
 			}
 
-			$package->version = $package->reference;
-
-			foreach ($configGlobal->repositories as $repository){
-
-				if (	empty($repository->type) == TRUE
-					||	$repository->type != 'package'
-					||	empty($repository->package) == TRUE
-					||	empty($repository->package->name) == TRUE
-					||	empty($repository->package->version) == TRUE
-					||	empty($repository->package->source) == TRUE
-					||	empty($repository->package->source->type) == TRUE
-					||	empty($repository->package->source->url) == TRUE
-					){
-					continue;
-				}
-
-				if (	$repository->package->source->type != 'cvs'
-					&&	$repository->package->source->type != 'git'
-					){
-					trigger_error("Unsupported package source type ({$repository->package->source->type})", E_USER_WARNING);
-					continue;
-				}
-
-				if (	$package->name == $repository->package->name
-					&&	$package->version == $repository->package->version
-					){
-					if (empty($package->url) == FALSE){
-						throw new \Exception("package url already defined as {$package->url} ({$repository->package->source->url})");
-					}
-					$package->url = $repository->package->source->url;
-					break;
-				}
+			if (	$repository->package->source->type != 'cvs'
+				&&	$repository->package->source->type != 'git'
+				){
+				trigger_error("Unsupported package source type ({$repository->package->source->type})", E_USER_WARNING);
+				continue;
 			}
 
-			if (empty($package->url)){
-				throw new \Exception("Can not resolve packageUrl for {$package->name}:{$package->version}");
+			if (	$package->name == $repository->package->name
+				&&	$package->version == $repository->package->version
+				){
+				if (empty($package->url) == FALSE){
+					throw new \Exception("package url already defined as {$package->url} ({$repository->package->source->url})");
+				}
+				$package->url = $repository->package->source->url;
+				break;
 			}
 		}
 
-		// resolve packageCommit
+		if (empty($package->url)){
+			throw new \Exception("Can not resolve packageUrl for {$package->name}:{$package->version}");
+		}
+
+		return TRUE;
+	}
+
+	/**
+	 * Resolve commit
+	 **/
+
+	public function setCommit($package) {
+
+		$project = new \Pdr\Ppm\Project;
 
 		$configLock = $project->config('lock');
-		foreach ($packages as $package){
-			if ($packageLock = $configLock->getPackage($package->name)){
-				if (	$packageLock->name == $package->name
-					&&	$packageLock->version == $package->version
-					){
-					$package->source = new \stdClass;
-					$package->source->type = 'cvs';
-					$package->source->reference = $packageLock->source->reference;
-				}
+		if ($packageLock = $configLock->getPackage($package->name)){
+			if (	$packageLock->name == $package->name
+				&&	$packageLock->version == $package->version
+				){
+				$package->source = new \stdClass;
+				$package->source->type = 'cvs';
+				$package->source->reference = $packageLock->source->reference;
+				return TRUE;
 			}
 		}
 
-		// install package
-
-		foreach ($packages as $package){
-			$this->installPackage($package);
-		}
+		return FALSE;
 	}
 
 	public function installPackage($package) {
