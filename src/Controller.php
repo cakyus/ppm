@@ -304,38 +304,45 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 		if ($option->getCommandCount() == 0){
 
+			$configLocal = $project->config('local');
+
 			$package = new \Pdr\Ppm\Package;
-			$config = $project->config('local');
-			$package->install($config->getFilePath());
+			$package->install($configLocal);
 
 			$this->initAutoload();
 
-			// execute post install command
+			// TODO execute post install command
 			// $this->commandExec('post-install-cmd');
 
 		} elseif ($option->getCommandCount() == 1) {
 
-			$optionDevelopmentPackage = $option->getOption('dev');
-			$packageNameReference = $option->getCommand(0);
-			if (preg_match("/^([^:]+):(.+)$/", $packageNameReference, $match) == FALSE){
-				throw new \Exception("Invalid packageNameReference '$packageNameReference'");
+			$inputPackageNameReference = $option->getCommand(0);
+			if (preg_match("/^([^:]+):(.+)$/", $inputPackageNameReference, $match) == FALSE){
+				throw new \Exception("Invalid packageNameReference '$inputPackageNameReference'");
 			}
 
-			$packageName = $match[1];
-			$packageReference = $match[2];
-			$packageRepositoryUrl = NULL;
+			$inputPackage = new \stdClass;
+			$inputPackage->name = $match[1];
+			$inputPackage->reference = $match[2];
 
-			if ($optionDevelopmentPackage == FALSE){
-				$project->createPackage($packageName, $packageReference, $packageRepositoryUrl);
-			} else {
-				$project->createDelopmentPackage($packageName, $packageReference, $packageRepositoryUrl);
-			}
+			$package = new \Pdr\Ppm\Package;
+			$package->setVersion($inputPackage);
+			$package->setRepositoryUrl($inputPackage);
+			$package->setCommit($inputPackage);
+			$package->installPackage($inputPackage);
 
-			$project->configLock->save();
-			$project->configPackage->save();
+			$configLocal = $project->config('local');
+			$configLocal->setPackage($inputPackage->name, $inputPackage->reference);
+			$configLocal->save();
+
 			$this->initAutoload();
 
+			// TODO execute post install command
+			// $this->commandExec('post-install-cmd');
+
 		} elseif ($option->getCommandCount() == 2) {
+
+			// TODO use package->install()
 
 			$optionDevelopmentPackage = $option->getOption('dev');
 			$packageNameRevision = $option->getCommand(0);
@@ -353,11 +360,14 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 			} else {
 				$project->createDelopmentPackage($packageName, $packageRevision, $packageRepositoryUrl);
 			}
+
+			// TODO execute post install command
+			// $this->commandExec('post-install-cmd');
 		}
 	}
 
 	/**
-	 * Update packages
+	 * Upgrade packages
 	 **/
 
 	public function commandUpgrade(){
@@ -384,7 +394,7 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 	}
 
 	/**
-	 * Update repositories database
+	 * Update packages repository
 	 **/
 
 	public function commandUpdate() {
