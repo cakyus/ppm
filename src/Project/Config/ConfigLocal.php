@@ -35,11 +35,11 @@ class ConfigLocal extends \Pdr\Ppm\Project\Config\ConfigFile {
 	public function loadFile($filePath) {
 
 		if (parent::loadFile($filePath) === FALSE){
-			throw new \Exception("Load local configuration failed");
+			throw new \Exception("Load local configuration failed. $filePath");
 		}
 
 		if (empty($this->name)){
-			throw new \Exception("Project name is not defined");
+			throw new \Exception("Project name is not defined. $filePath");
 		}
 
 		// Version should determited by version control.
@@ -47,11 +47,11 @@ class ConfigLocal extends \Pdr\Ppm\Project\Config\ConfigFile {
 		// creating problems at some point due to human error.
 
 		if (empty($this->version) == FALSE){
-			throw new \Exception("Project version should not defined");
+			throw new \Exception("Project version should not defined. $filePath");
 		}
 
 		if (empty($this->license)){
-			throw new \Exception("Project license is not defined");
+			throw new \Exception("Project license is not defined. $filePath");
 		}
 
 		$this->setDefaultValues();
@@ -74,6 +74,36 @@ class ConfigLocal extends \Pdr\Ppm\Project\Config\ConfigFile {
 
 	public function getPackages() {
 
+		// get required packages
+		// TODO compare package reference compatibility
+
+		$option = new \Pdr\Ppm\Cli\Option;
+
+		$attributeNames = array('require');
+		if ($option->getOption('dev')){
+			$attributeNames[] = 'require-dev';
+		}
+
+		$packages = array();
+
+		foreach ($attributeNames as $attributeName){
+			foreach ($this->$attributeName as $packageName => $packageReference){
+				if ($packageName == 'php'){
+					trigger_error("PHP version check not yet supported", E_USER_WARNING);
+					continue;
+				}
+				if (substr($packageName,0,4) == 'ext-'){
+					trigger_error("PHP extension version check not yet supported", E_USER_WARNING);
+					continue;
+				}
+				$package = new \stdClass;
+				$package->name = $packageName;
+				$package->reference = $packageReference;
+				$packages[$packageName] = $package;
+			}
+		}
+
+		return $packages;
 	}
 
 	public function setPackage($packageName, $packageReference) {

@@ -307,55 +307,12 @@ class Package {
 	}
 
 	public function install($configLocal) {
-		$configFilePath = $configLocal->getFilePath();
-		foreach ($this->findPackage($configFilePath) as $package){
+		foreach ($configLocal->getPackages() as $package){
 			$this->setVersion($package);
 			$this->setRepositoryUrl($package);
 			$this->setCommit($package);
 			$this->installPackage($package);
 		}
-	}
-
-	/**
-	 * Find packages in a composer file
-	 * @return array
-	 **/
-
-	public function findPackage($composerFile) {
-
-		$project = new \Pdr\Ppm\Project;
-		$option = new \Pdr\Ppm\Cli\Option;
-
-		$configFile = $project->config($composerFile);
-
-		// get required packages
-		// TODO compare package reference compatibility
-
-		$attributeNames = array('require');
-		if ($option->getOption('dev')){
-			$attributeNames[] = 'require-dev';
-		}
-
-		$packages = array();
-
-		foreach ($attributeNames as $attributeName){
-			foreach ($configFile->$attributeName as $packageName => $packageReference){
-				if ($packageName == 'php'){
-					trigger_error("PHP version check not yet supported", E_USER_WARNING);
-					continue;
-				}
-				if (substr($packageName,0,4) == 'ext-'){
-					trigger_error("PHP extension version check not yet supported", E_USER_WARNING);
-					continue;
-				}
-				$package = new \stdClass;
-				$package->name = $packageName;
-				$package->reference = $packageReference;
-				$packages[$packageName] = $package;
-			}
-		}
-
-		return $packages;
 	}
 
 	/**
@@ -462,7 +419,7 @@ class Package {
 		}
 
 		if (is_dir(WORKDIR.'/vendor/'.$package->name.'/.git')){
-			trigger_error("Package {$package->name} already installed", E_USER_NOTICE);
+			return TRUE;
 		} elseif (empty($package->source->reference)){
 			$this->installPackageVersion($package);
 		} else {
@@ -470,8 +427,15 @@ class Package {
 		}
 
 		// install dependencies
-		if (is_file(WORKDIR.'/vendor/'.$package->name.'/composer.json')){
 
+		if (is_file(WORKDIR.'/vendor/'.$package->name.'/composer.json')){
+			$configLocal = new \Pdr\Ppm\Project\Config\ConfigLocal;
+			$configLocal->loadFile(WORKDIR.'/vendor/'.$package->name.'/composer.json');
+			$this->install($configLocal);
+		}
+
+		if (is_file(WORKDIR.'/vendor/'.$package->name.'/ppm.json')){
+			trigger_error("ppm.json is deprecated ".WORKDIR.'/vendor/'.$package->name.'/ppm.json', E_USER_WARNING);
 		}
 	}
 
