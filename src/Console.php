@@ -25,6 +25,9 @@ class Console {
 		}
 		passthru($command, $exitCode);
 		if ($exitCode != 0){
+			if (empty(getenv('PHP_TRACE'))) {
+				fwrite(STDERR, "> $command\n");
+			}
 			throw new \Exception("Command return non zero exit code");
 		}
 	}
@@ -35,6 +38,9 @@ class Console {
 		}
 		exec($command, $outputLines, $exitCode);
 		if ($exitCode != 0){
+			if (empty(getenv('PHP_TRACE'))) {
+				fwrite(STDERR, "> $command\n");
+			}
 			throw new \Exception("Command return non zero exit code");
 		}
 
@@ -47,6 +53,9 @@ class Console {
 		}
 		exec($command, $outputLines, $exitCode);
 		if ($exitCode != 0){
+			if (empty(getenv('PHP_TRACE'))) {
+				fwrite(STDERR, "> $command\n");
+			}
 			throw new \Exception("Command return non zero exit code");
 		}
 		return $outputLines;
