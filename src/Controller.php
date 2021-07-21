@@ -386,10 +386,16 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 	public function commandUpdate() {
 
+		$project = new \Pdr\Ppm\Project;
+		$package = new \Pdr\Ppm\Package;
+
+		$package->update(
+			$project->config('lock')
+			);
 	}
 
 	/**
-	 * Print status of local, local vs remove, and local vs lock
+	 * Print status of local, local vs remote, and local vs lock
 	 **/
 
 	public function commandStatus() {
@@ -445,8 +451,8 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
 				// remote status : local vs remote
 
-				if (is_file($packageDir.'/.git/refs/remotes/origin/master') == TRUE){
-					$remoteCommitHash = file_get_contents($packageDir.'/.git/refs/remotes/origin/master');
+				if (is_file($packageDir.'/.git/refs/remotes/origin/'.$package->version) == TRUE){
+					$remoteCommitHash = file_get_contents($packageDir.'/.git/refs/remotes/origin/'.$package->version);
 					$remoteCommitHash = trim($remoteCommitHash);
 					if ($localCommitHash == $remoteCommitHash){
 						$remoteStatus = ' ';
