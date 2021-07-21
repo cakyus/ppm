@@ -567,7 +567,28 @@ class Package {
 		$console->exec($commandText);
 	}
 
-	public function update() {
+	public function update($configLock) {
+		foreach ($configLock->packages as $package){
+			$this->updatePackage($package);
+		}
+	}
+
+	public function updatePackage($package) {
+
+		$console = new \Pdr\Ppm\Console;
+
+		$binGit = 'git'
+			.' --git-dir='.WORKDIR.'/vendor/'.$package->name.'/.git'
+			.' --work-tree='.WORKDIR.'/vendor/'.$package->name
+			;
+
+		$commandText = "$binGit fetch origin {$package->version}";
+
+		$console->exec($commandText);
+	}
+
+
+	public function _update() {
 
 		fwrite(STDOUT, "Update {$this->name} {$this->version} {$this->repositoryUrl} ..\n");
 
