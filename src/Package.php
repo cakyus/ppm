@@ -136,6 +136,13 @@ class Package {
     $packageCommitHash = trim($packageCommitHash);
     $this->commitHash = $packageCommitHash;
 
+
+    // update ~/.composer.json
+
+    $configGlobal = $project->config('global');
+    $configGlobal->setPackage($packageName, $packageVersion, $packageRepositoryUrl);
+    $configGlobal->save();
+
     if (isset($project->dependencyPackages[$packageName]) == FALSE){
       $object = new \stdClass;
       $object->name = $packageName;
@@ -455,10 +462,15 @@ class Package {
       throw new \Exception("Invalid package. ".var_export($package, TRUE));
     }
 
+    // update composer.lock.json
+
     $project = new \Pdr\Ppm\Project;
+
     $config = $project->config('lock');
     $config->setPackage($package->name, $package->version, $package->source->reference);
     $config->save();
+
+
 
     // install dependencies
 

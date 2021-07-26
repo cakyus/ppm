@@ -19,22 +19,60 @@ namespace Pdr\Ppm\Project\Config;
 
 class ConfigGlobal extends \Pdr\Ppm\Project\Config\ConfigFile {
 
-	public function __construct() {
-		parent::__construct();
-	}
+  public function __construct() {
+    parent::__construct();
+  }
 
-	/**
-	 * Validate configuration
-	 **/
+  /**
+   * Validate configuration
+   **/
 
-	public function loadFile($filePath) {
+  public function loadFile($filePath) {
 
-		parent::loadFile($filePath);
+    parent::loadFile($filePath);
 
-		if (empty($this->repositories)){
-			$this->repositories = array();
-		}
+    if (empty($this->repositories)){
+      $this->repositories = array();
+    }
 
-		return TRUE;
-	}
+    return TRUE;
+  }
+
+
+  public function setPackage($packageName, $packageVersion, $packageUrl) {
+
+    foreach ($this->repositories as $repository){
+
+      if (  empty($repository->type) == FALSE && $repository->type == 'package'
+        &&  empty($repository->package->name) == FALSE && $repository->package->name == $packageName
+        &&  empty($repository->package->version) == FALSE && $repository->package->version == $packageVersion
+        ){
+        if (empty($repository->package->source)){
+          $repository->package->source = new \stdClass;
+        }
+        if (empty($repository->package->source->type)){
+          $repository->package->source->type = 'cvs';
+        }
+        $repository->package->source->url = $packageUrl;
+        return TRUE;
+      }
+    }
+
+    $repository = new \stdClass;
+    $repository->type = 'package';
+    $repository->package = new \stdClass;
+    $repository->package->name = $packageName;
+    $repository->package->version = $packageVersion;
+    $repository->package->source = new \stdClass;
+    $repository->package->source->type = 'cvs';
+    $repository->package->source->url = $packageUrl;
+
+    // Indirect modification of overloaded property
+
+    $repositories = $this->repositories;
+    $repositories[] = $repository;
+    $this->repositories = $repositories;
+
+    return TRUE;
+  }
 }
