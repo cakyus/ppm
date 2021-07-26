@@ -848,14 +848,14 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
 
     $this->shiftCommand();
 
-    $controller = new \Pdr\Ppm\Controller\Config;
-    $option = new \Pdr\Ppm\Cli\Option;
+    // set default command to commandIndex
 
-    if ($option->getCommandCount() == 0){
+    if ($_SERVER['argc'] == 1){
       $_SERVER['argc']++;
       $_SERVER['argv'][] = 'index';
     }
 
+    $controller = new \Pdr\Ppm\Controller\Config;
     $controller->execute();
   }
 
