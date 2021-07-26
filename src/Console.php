@@ -19,45 +19,71 @@ namespace Pdr\Ppm;
 
 class Console {
 
-	public function exec($command){
-		if (getenv('PHP_TRACE')) {
-			fwrite(STDERR, "> $command\n");
-		}
-		passthru($command, $exitCode);
-		if ($exitCode != 0){
-			if (empty(getenv('PHP_TRACE'))) {
-				fwrite(STDERR, "> $command\n");
-			}
-			throw new \Exception("Command return non zero exit code");
-		}
-	}
+  public function exec($command){
 
-	public function text($command){
-		if (getenv('PHP_TRACE')) {
-			fwrite(STDERR, "> $command\n");
-		}
-		exec($command, $outputLines, $exitCode);
-		if ($exitCode != 0){
-			if (empty(getenv('PHP_TRACE'))) {
-				fwrite(STDERR, "> $command\n");
-			}
-			throw new \Exception("Command return non zero exit code");
-		}
+    $fileOutput = tempnam(sys_get_temp_dir(), 'php');
+    $fileError = tempnam(sys_get_temp_dir(), 'php');
 
-		return implode("\n", $outputLines);
-	}
+    $command = "$command >$fileOutput 2>$fileError";
 
-	public function line($command){
-		if (getenv('PHP_TRACE')) {
-			fwrite(STDERR, "> $command\n");
-		}
-		exec($command, $outputLines, $exitCode);
-		if ($exitCode != 0){
-			if (empty(getenv('PHP_TRACE'))) {
-				fwrite(STDERR, "> $command\n");
-			}
-			throw new \Exception("Command return non zero exit code");
-		}
-		return $outputLines;
-	}
+    if (getenv('PHP_TRACE')) {
+      fwrite(STDERR, "> $command\n");
+    }
+
+    passthru($command, $exitCode);
+
+    if ($exitCode != 0){
+
+      if (empty(getenv('PHP_TRACE'))) {
+        fwrite(STDERR, "> $command\n");
+      }
+
+      if (filesize($fileOutput)){
+        fwrite(STDERR, "-- STDOUT --\n");
+        fwrite(STDERR, file_get_contents($fileOutput)."\n");
+      }
+
+      if (filesize($fileError)){
+        fwrite(STDERR, "-- STDERR --\n");
+        fwrite(STDERR, file_get_contents($fileError)."\n");
+      }
+
+      unlink($fileOutput);
+      unlink($fileError);
+
+      throw new \Exception("Command return non zero exit code");
+    }
+
+    unlink($fileOutput);
+    unlink($fileError);
+  }
+
+  public function text($command){
+    if (getenv('PHP_TRACE')) {
+      fwrite(STDERR, "> $command\n");
+    }
+    exec($command, $outputLines, $exitCode);
+    if ($exitCode != 0){
+      if (empty(getenv('PHP_TRACE'))) {
+        fwrite(STDERR, "> $command\n");
+      }
+      throw new \Exception("Command return non zero exit code");
+    }
+
+    return implode("\n", $outputLines);
+  }
+
+  public function line($command){
+    if (getenv('PHP_TRACE')) {
+      fwrite(STDERR, "> $command\n");
+    }
+    exec($command, $outputLines, $exitCode);
+    if ($exitCode != 0){
+      if (empty(getenv('PHP_TRACE'))) {
+        fwrite(STDERR, "> $command\n");
+      }
+      throw new \Exception("Command return non zero exit code");
+    }
+    return $outputLines;
+  }
 }
