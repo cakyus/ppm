@@ -362,14 +362,11 @@ class Package {
         continue;
       }
 
-      if (  $package->name == $repository->package->name
-        &&  $package->version == $repository->package->version
-        ){
+      if ($package->name == $repository->package->name){
         if (empty($package->url) == FALSE){
           throw new \Exception("package url already defined as {$package->url} ({$repository->package->source->url})");
         }
         $package->url = $repository->package->source->url;
-        break;
       }
     }
 
