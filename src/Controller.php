@@ -92,13 +92,15 @@ class Controller extends \Pdr\Ppm\Cli\Controller {
       if ($packageName == 'php'){
         continue;
       }
-      $composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
-      if (is_file($composerFile) == FALSE){
-        $composerFile = $project->getVendorDir().'/'.$packageName.'/ppm.json';
+      $composerFile = $project->getVendorDir().'/'.$packageName.'/ppm.json';
+      if (is_file($composerFile) == TRUE){
         trigger_error("$composerFile is deprecated", E_USER_DEPRECATED);
       }
-      $packageDir = '$vendorDir.\'/'.$packageName.'\'';
-      $autoloadText .= $this->initAutoloadFile($packageDir, $composerFile);
+      $composerFile = $project->getVendorDir().'/'.$packageName.'/composer.json';
+      if (is_file($composerFile) == TRUE){
+				$packageDir = '$vendorDir.\'/'.$packageName.'\'';
+				$autoloadText .= $this->initAutoloadFile($packageDir, $composerFile);
+      }
     }
 
     $autoloadText .= "}\n\nspl_autoload_register('$autoloadFunctionName');\n";
